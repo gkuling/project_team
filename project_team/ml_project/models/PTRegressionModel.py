@@ -1,6 +1,4 @@
 from project_team.project_config import project_config
-from project_team.dt_project.dt_processing import Cast_numpy
-import numpy as np
 from torch import nn
 import torch
 

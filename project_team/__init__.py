@@ -1,5 +1,4 @@
-from project_team import dt_project as dt_project
-from project_team import io_project as io_project
+from project_team import io_project as io_project, dt_project as dt_project
 from project_team import ml_project as ml_project
 from project_team.ml_project import models
 import io

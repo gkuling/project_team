@@ -9,9 +9,7 @@ from tqdm import tqdm
 from scipy.stats import hmean
 from project_team.project_config import project_config
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
-from torch.utils.data import DataLoader
 from skimage.filters import threshold_otsu
-from copy import deepcopy
 import numpy as np
 
 

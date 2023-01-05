@@ -1,9 +1,7 @@
 import pandas as pd
 from torchvision import transforms
-from tqdm import tqdm
 import SimpleITK as sitk
 
-from project_team.dt_project.DT_config import DT_config
 from project_team.dt_project.datasets import SITK_Dataset, SITK_Dataset_Patchwise, \
     SITK_Dataset_Slicewise
 from project_team.dt_project.dt_processing import *
