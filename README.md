@@ -34,3 +34,16 @@ These config files save as txt dictionary files and can easily be manually edite
 
 This object is largely inspired by the *transformers* package from huggingface. (https://huggingface.co/transformers)
 
+## IO Managers
+
+Description of a Manager and their base functions 
+
+## Data Processors
+
+Description of Processors and their base functions 
+
+## Statistical Practitioners 
+
+Description of Practitioners and their base functions
+
+
