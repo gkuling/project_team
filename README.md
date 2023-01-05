@@ -18,6 +18,12 @@ Between the three objects there are three key operations between two objects.
 - Processing: transforming input data to the proper space to be used by the practitioner, and transfering inference results from the statistical process. 
 - Designing: developing and deploying a given statistical model that can have a persistent set up. The manager tells the PRactitioner where files are located and the Pracitioner checks requirements and loads data. 
 
+### Table of Contents
+**[Configurations](##configurations)**<br>
+**[IO Managers](#io-managers)**<br>
+**[Data Processors](#data-processors)**<br>
+**[Statistical Practitioners](#statistical-practitioners)**<br>
+
 ## Configurations 
 
 The currency of this framework is a configuration file. These objects take dictionaries of data that hold key aspects, or parameters to perform functions. Each object in the pro_team will have a config that it uses to understand principles necessary to do its job.
