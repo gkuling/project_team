@@ -1,13 +1,13 @@
 import gc
 
 import torch.optim
-from project_team.ml_project.segmentation_losses import GeneralizedDiceLoss
+from src.ml_project.segmentation_losses import GeneralizedDiceLoss
 from sklearn.metrics import multilabel_confusion_matrix
-from project_team.dt_project.dt_processing import *
+from src.dt_project.dt_processing import *
 from torchvision import transforms
 from tqdm import tqdm
 from scipy.stats import hmean
-from project_team.project_config import project_config
+from src.project_config import project_config
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
 from skimage.filters import threshold_otsu
 import numpy as np

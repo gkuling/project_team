@@ -2,9 +2,9 @@ import pandas as pd
 from torchvision import transforms
 import SimpleITK as sitk
 
-from project_team.dt_project.datasets import SITK_Dataset, SITK_Dataset_Patchwise, \
+from src.dt_project.datasets import SITK_Dataset, SITK_Dataset_Patchwise, \
     SITK_Dataset_Slicewise
-from project_team.dt_project.dt_processing import *
+from src.dt_project.dt_processing import *
 
 class SITK_Processor_config(DT_config):
 

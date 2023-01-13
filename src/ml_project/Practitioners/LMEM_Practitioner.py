@@ -1,4 +1,4 @@
-from project_team.project_config import project_config
+from src.project_config import project_config
 import matplotlib.pyplot as plt
 from cycler import cycler
 from matplotlib.cm import get_cmap

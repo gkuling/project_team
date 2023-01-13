@@ -1,4 +1,4 @@
-from project_team.io_project.IO_config import io_config
+from src.io_project.IO_config import io_config
 import os
 import pandas as pd
 import numpy as np

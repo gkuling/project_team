@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from project_team.io_project.IO_config import io_config
+from src.io_project.IO_config import io_config
 from sklearn.model_selection import train_test_split
 
 class _Statistical_Project():

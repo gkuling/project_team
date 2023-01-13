@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from copy import deepcopy
 from tqdm import tqdm
 from .Scan_utils import *
-from project_team.project_config import is_Primitive
+from src.project_config import is_Primitive
 from torchvision import transforms as pt_transforms
 # from .file_silo import File_Silo
 

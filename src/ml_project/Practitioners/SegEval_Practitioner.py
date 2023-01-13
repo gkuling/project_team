@@ -3,7 +3,7 @@ import os.path
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from project_team.project_config import project_config, is_Primitive
+from src.project_config import project_config, is_Primitive
 
 def quick_visualize(input_data, folder, score):
     import matplotlib.pyplot as plt

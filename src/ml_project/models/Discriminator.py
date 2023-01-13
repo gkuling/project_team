@@ -1,4 +1,4 @@
-from project_team.project_config import *
+from src.project_config import *
 from torch import nn
 
 class Discriminator_config(project_config):

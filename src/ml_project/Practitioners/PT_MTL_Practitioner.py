@@ -4,9 +4,9 @@ from tqdm import tqdm
 import gc
 import numpy as np
 
-from project_team.project_config import project_config, is_Primitive
+from src.project_config import project_config, is_Primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
-from project_team.dt_project.dt_processing import *
+from src.dt_project.dt_processing import *
 from torchvision import transforms
 
 class PT_MTL_Practitioner_config(PTPractitioner_config,

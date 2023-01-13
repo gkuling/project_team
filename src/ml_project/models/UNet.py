@@ -1,9 +1,9 @@
 import torch.nn.functional
 
-from project_team.project_config import project_config
+from src.project_config import project_config
 import numpy as np
 from torch import nn
-from project_team.ml_project.models.UNet_fcns import *
+from src.ml_project.models.UNet_fcns import *
 
 class UNet_config(project_config):
     def __init__(self,

@@ -1,4 +1,4 @@
-from project_team.project_config import project_config
+from src.project_config import project_config
 from torch import nn
 import torch
 

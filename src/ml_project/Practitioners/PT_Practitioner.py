@@ -1,5 +1,5 @@
-from project_team.project_config import project_config
-from project_team.dt_project.dt_processing import *
+from src.project_config import project_config
+from src.dt_project.dt_processing import *
 import numpy as np
 from copy import deepcopy
 import torch

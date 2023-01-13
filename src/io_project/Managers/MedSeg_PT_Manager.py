@@ -1,6 +1,6 @@
 import os
 
-from project_team.project_config import is_Primitive
+from src.project_config import is_Primitive
 import pandas as pd
 import SimpleITK as sitk
 
