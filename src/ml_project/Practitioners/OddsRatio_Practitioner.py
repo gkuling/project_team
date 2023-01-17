@@ -3,7 +3,6 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-import kaplanmeier as km
 
 class OddsRatio_Practitioner():
     def __init__(self,
@@ -76,19 +75,11 @@ class OddsRatio_Practitioner():
             input_cat[self.exposure + '_thr'] = input_cat[self.exposure].apply(
                 lambda x: x > thr
             )
-            if self.print_graphs:
-                or_test = {'Metric': [],
-                           'OddsRatio': [],
-                           'OddsRatioCI': [],
-                           'OddsRatioPval': [],
-                           'img_file': []
-                           }
-            else:
-                or_test = {'Metric': [],
-                           'OddsRatio': [],
-                           'OddsRatioCI': [],
-                           'OddsRatioPval': []
-                           }
+            or_test = {'Metric': [],
+                       'OddsRatio': [],
+                       'OddsRatioCI': [],
+                       'OddsRatioPval': []
+                       }
             or_test['Metric'].append(self.exposure + '_Thr' + str(thr))
             if all(input_cat[self.exposure + '_thr'].values):
                 or_test['OddsRatio'].append('NaN')
@@ -114,31 +105,6 @@ class OddsRatio_Practitioner():
                 or_test['OddsRatioPval'].append(or_rslt.oddsratio_pvalue())
 
 
-            if self.print_graphs:
-                assert self.duration in dataset.columns
-                # KM curve
-                thr = np.round(thr, 2)
-                time_event = dataset[self.duration].values
-                y = dataset[self.exposure].apply(
-                    lambda x: 'Greater ' + str(thr)
-                    if x>thr else 'Lesser ' + str(thr))
-                censoring = dataset['CancerDevelopment'].apply(
-                    lambda x: 1 if x=='Positive' else 0 )
-                results = km.fit(time_event, censoring, y)
-                km.plot(results,
-                        savepath=os.path.join(self.io_manager.root,
-                                         self.exposure+'_'+self.outcome+'_' +
-                                         str(thr).replace('.','_') +
-                                         '_km_curve.pdf'))
-                km.plot(results,
-                        savepath=os.path.join(self.io_manager.root,
-                                              self.exposure+'_'+self.outcome+'_' +
-                                              str(thr).replace('.','_') +
-                                              '_km_curve.png'))
-                or_test['img_file'].append(os.path.join(self.io_manager.root,
-                                                        self.exposure+'_'+self.outcome+'_' +
-                                                        str(thr).replace('.','_') +
-                                                        '_km_curve.png'))
             if hasattr(self, 'or_test'):
                 self.or_test = pd.concat([self.or_test,
                                           pd.DataFrame(or_test)])

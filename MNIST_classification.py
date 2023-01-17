@@ -1,4 +1,6 @@
 import argparse
+
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,8 +8,17 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 
+import src as proteam
 
+import os
+
+r_seed = 20230117
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+parser.add_argument('--working_dir',type=str,
+                    default='/amartel_data/Grey/pro_team_examples'
+                            '/TrainTestSplit',
+                    help='The current directory to save models, and configs '
+                         'of the experiment')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                     help='input batch size for training (default: 64)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -24,13 +35,13 @@ parser.add_argument('--no-mps', action='store_true', default=False,
                     help='disables macOS GPU training')
 parser.add_argument('--dry-run', action='store_true', default=False,
                     help='quickly check a single pass')
-parser.add_argument('--seed', type=int, default=1, metavar='S',
+parser.add_argument('--seed', type=int, default=20220113, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
 parser.add_argument('--save-model', action='store_true', default=False,
                     help='For Saving the current Model')
-args = parser.parse_args()
+opt = parser.parse_args()
 
 class Net(nn.Module):
     def __init__(self):
@@ -58,7 +69,7 @@ class Net(nn.Module):
         return output
 
 
-def train(args, model, device, train_loader, optimizer, epoch):
+def train(opt, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
@@ -67,11 +78,11 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
-        if batch_idx % args.log_interval == 0:
+        if batch_idx % opt.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-            if args.dry_run:
+            if opt.dry_run:
                 break
 
 
@@ -93,10 +104,60 @@ def test(model, device, test_loader):
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
-use_cuda = not args.no_cuda and torch.cuda.is_available()
-use_mps = not args.no_mps and torch.backends.mps.is_available()
+if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
+    if not os.path.exists(opt.working_dir + '/data'):
+        os.mkdir(opt.working_dir + '/data')
 
-torch.manual_seed(args.seed)
+    dataset1 = datasets.MNIST('../data', train=True, download=True)
+
+    dataset2 = datasets.MNIST('../data', train=False)
+    all_data = []
+    cnt = 0
+    for ex in dataset1:
+        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
+        all_data.append(
+            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
+             'label': ex[1]}
+        )
+        cnt += 1
+    for ex in dataset2:
+        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
+        all_data.append(
+            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
+             'label': ex[1]}
+        )
+        cnt += 1
+    all_data = pd.DataFrame(all_data)
+    all_data.to_csv(opt.working_dir + '/data/dataset_info.csv')
+    print('Saved all images and data set file to ' + opt.working_dir + '/data')
+
+io_args = {
+    'data_csv_location':opt.working_dir + '/data/dataset_info.csv',
+    'inf_data_csv_location': None,
+    'val_data_csv_location': None,
+    'experiment_name':'MNIST_TrainTestSplit',
+    'project_folder':opt.working_dir,
+    'X':'img_data',
+    'X_dtype':'PIL png',
+    'y':'label',
+    'y_dtype':'discrete',
+    'y_domain': [_ for _ in range(10)],
+    'group_data_by':None,
+    'test_size': 0.1,
+    'validation_size': 0.1,
+    'stratify_by': 'label',
+    'r_seed': r_seed
+}
+
+io_project_cnfg = proteam.io_project.io_traindeploy_config(**io_args)
+
+manager = proteam.io_project.Pytorch_Manager(io_config_input=io_project_cnfg)
+
+manager.prepare_for_experiment()
+
+
+use_cuda = not opt.no_cuda and torch.cuda.is_available()
+use_mps = not opt.no_mps and torch.backends.mps.is_available()
 
 if use_cuda:
     device = torch.device("cuda")
@@ -105,8 +166,8 @@ elif use_mps:
 else:
     device = torch.device("cpu")
 
-train_kwargs = {'batch_size': args.batch_size}
-test_kwargs = {'batch_size': args.test_batch_size}
+train_kwargs = {'batch_size': opt.batch_size}
+test_kwargs = {'batch_size': opt.test_batch_size}
 if use_cuda:
     cuda_kwargs = {'num_workers': 1,
                    'pin_memory': True,
@@ -118,22 +179,18 @@ transform=transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.1307,), (0.3081,))
     ])
-dataset1 = datasets.MNIST('../data', train=True, download=True,
-                   transform=transform)
-dataset2 = datasets.MNIST('../data', train=False,
-                   transform=transform)
 train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
 test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
 model = Net().to(device)
-optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+optimizer = optim.Adadelta(model.parameters(), lr=opt.lr)
 
-scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
-for epoch in range(1, args.epochs + 1):
-    train(args, model, device, train_loader, optimizer, epoch)
+scheduler = StepLR(optimizer, step_size=1, gamma=opt.gamma)
+for epoch in range(1, opt.epochs + 1):
+    train(opt, model, device, train_loader, optimizer, epoch)
     test(model, device, test_loader)
     scheduler.step()
 
-if args.save_model:
+if opt.save_model:
     torch.save(model.state_dict(), "mnist_cnn.pt")
 

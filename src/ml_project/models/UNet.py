@@ -296,36 +296,3 @@ class UNetDecoder(nn.Module):
                 else:
                     u = self.layers[i-1](u, lvls[-i-1])
             return self.outc(u)
-
-from torchsummary import summary
-if __name__=='__main__':
-    config = UNet_config(
-        **{
-            # "activation": "leakyrelu",
-            # "base_filters": 16,
-            "model_name": "model_VNet",
-        #     "depth": 4,
-        #     "batch_norm":True,
-        #     "dropout": 0.5,
-        #     "dimensionality": "2D",
-        #     "in_channels": 1,
-        #     "inplane_kernel": [
-        #         3,
-        #         3
-        #     ],
-        #     "downsample_kernel":(2,2),
-        #     "upsample_kernel":(2,2),
-        #     "inplane_layers": 1,
-        #     "out_channels": 1,
-        #     "skip_connections": False,
-        #     "strided_decoder": True,
-        #     "strided_encoder": True
-        }
-
-    )
-    mdl = UNet(config=
-        config
-    )
-    summary(mdl, (1,128,128))
-    a = mdl.forward(torch.ones((1,1,128,128)).cuda())
-    print('')
