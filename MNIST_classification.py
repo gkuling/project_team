@@ -68,7 +68,131 @@ class Net(nn.Module):
         output = F.log_softmax(x, dim=1)
         return output
 
+# Prepare data if not already saved and set up
+if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
+    if not os.path.exists(opt.working_dir + '/data'):
+        os.mkdir(opt.working_dir + '/data')
 
+    dataset1 = datasets.MNIST('../data', train=True, download=True)
+
+    dataset2 = datasets.MNIST('../data', train=False)
+    all_data = []
+    cnt = 0
+    for ex in dataset1:
+        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
+        all_data.append(
+            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
+             'label': ex[1]}
+        )
+        cnt += 1
+    for ex in dataset2:
+        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
+        all_data.append(
+            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
+             'label': ex[1]}
+        )
+        cnt += 1
+    all_data = pd.DataFrame(all_data)
+    all_data.to_csv(opt.working_dir + '/data/dataset_info.csv')
+    print('Saved all images and data set file to ' + opt.working_dir + '/data')
+
+# Prepare Manager
+io_args = {
+    'data_csv_location':opt.working_dir + '/data/dataset_info.csv',
+    'inf_data_csv_location': None,
+    'val_data_csv_location': None,
+    'experiment_name':'MNIST_TrainTestSplit',
+    'project_folder':opt.working_dir,
+    'X':'img_data',
+    'X_dtype':'PIL png',
+    'y':'label',
+    'y_dtype':'discrete',
+    'y_domain': [_ for _ in range(10)],
+    'group_data_by':None,
+    'test_size': 0.1,
+    'validation_size': 0.1,
+    'stratify_by': 'label',
+    'r_seed': r_seed
+}
+
+io_project_cnfg = proteam.io_project.io_traindeploy_config(**io_args)
+
+manager = proteam.io_project.Pytorch_Manager(
+    io_config_input=io_project_cnfg
+)
+
+# Prepare Processor
+dt_args={
+    'silo_dtype': 'np.uint8',
+    'numpy_shape': (28,28),
+    'pad_shape':(28,28),
+    'pre_load':True
+}
+
+dt_project_cnfg = proteam.dt_project.Image_Processor_config(**dt_args)
+
+processor = proteam.dt_project.Image_Processor(
+    image_processor_config=dt_project_cnfg
+)
+
+# Prepare model
+mdl = Net()
+
+# Prepare Practitioner
+
+ml_args = {
+    'batch_size':opt.batch_size,
+    'n_epochs':opt.epochs,
+    'n_steps':None,
+    'warmup':0.0,
+    'lr_decay':None,
+    'n_saves':10,
+    'validation_criteria':'min',
+    'optimizer':'adadelta',
+    'lr':opt.lr,
+    'grad_clip':None,
+    'loss_type':'NLL',
+    'affine_aug':False,
+    'add_Gnoise':False,
+    'gaussian_std':1.0,
+    'normalization_percentiles':(0.0,100.0),
+    'normalization_channels':[(0.1307,0.3081)],
+    'n_workers':0,
+    'visualize_val':False,
+    'data_parallel':False
+}
+
+ml_project_cnfg = proteam.ml_project.PTClassification_Practitioner_config(
+    **ml_args)
+
+practitioner = proteam.ml_project.PTClassification_Practitioner(
+    model=mdl,
+    io_manager=manager,
+    data_processor=processor,
+    trainer_config=ml_project_cnfg
+)
+
+# Perform Training
+manager.prepare_for_experiment()
+
+processor.set_training_data(manager.root)
+processor.set_validation_data(manager.root)
+
+practitioner.train_model()
+
+# Perform Inference
+manager.prepare_for_inference()
+
+processor.set_inference_data(manager.root)
+
+practitioner.run_inference()
+
+test_results = processor.inference_results
+
+# Evaluate Inference Results
+
+
+### Pytorch example
 def train(opt, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -103,58 +227,6 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
-if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
-    if not os.path.exists(opt.working_dir + '/data'):
-        os.mkdir(opt.working_dir + '/data')
-
-    dataset1 = datasets.MNIST('../data', train=True, download=True)
-
-    dataset2 = datasets.MNIST('../data', train=False)
-    all_data = []
-    cnt = 0
-    for ex in dataset1:
-        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
-        all_data.append(
-            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
-             'label': ex[1]}
-        )
-        cnt += 1
-    for ex in dataset2:
-        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
-        all_data.append(
-            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
-             'label': ex[1]}
-        )
-        cnt += 1
-    all_data = pd.DataFrame(all_data)
-    all_data.to_csv(opt.working_dir + '/data/dataset_info.csv')
-    print('Saved all images and data set file to ' + opt.working_dir + '/data')
-
-io_args = {
-    'data_csv_location':opt.working_dir + '/data/dataset_info.csv',
-    'inf_data_csv_location': None,
-    'val_data_csv_location': None,
-    'experiment_name':'MNIST_TrainTestSplit',
-    'project_folder':opt.working_dir,
-    'X':'img_data',
-    'X_dtype':'PIL png',
-    'y':'label',
-    'y_dtype':'discrete',
-    'y_domain': [_ for _ in range(10)],
-    'group_data_by':None,
-    'test_size': 0.1,
-    'validation_size': 0.1,
-    'stratify_by': 'label',
-    'r_seed': r_seed
-}
-
-io_project_cnfg = proteam.io_project.io_traindeploy_config(**io_args)
-
-manager = proteam.io_project.Pytorch_Manager(io_config_input=io_project_cnfg)
-
-manager.prepare_for_experiment()
-
 
 use_cuda = not opt.no_cuda and torch.cuda.is_available()
 use_mps = not opt.no_mps and torch.backends.mps.is_available()

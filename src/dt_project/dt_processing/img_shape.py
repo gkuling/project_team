@@ -1,4 +1,7 @@
+from PIL import Image
+import numpy as np
 import SimpleITK as sitk
+
 import torch
 import os
 from skimage.transform import resize
@@ -31,6 +34,35 @@ class OpenSITK_file(_TensorProcessing):
                                                 for img in ipt[self.field_oi]]
             ipt[self.field_oi] = [sitk.ReadImage(img) if
                                   type(img)!=sitk.Image else
+                                  img
+                                  for img in ipt[self.field_oi]]
+
+        return ipt
+
+class OpenImage_file(_TensorProcessing):
+    def __init__(self, field_oi='X'):
+        super(OpenImage_file, self).__init__()
+        self.field_oi = field_oi
+
+    def __call__(self, ipt):
+
+        if type(ipt[self.field_oi])==str and os.path.exists(ipt[self.field_oi]):
+            ipt[self.field_oi + '_location'] = [ipt[self.field_oi]]
+            ipt[self.field_oi] = [Image.open(ipt[self.field_oi])]
+        else:
+            if type(ipt[self.field_oi])!=list:
+                try:
+                    ipt[self.field_oi] = eval(ipt[self.field_oi])
+                except:
+                    raise ValueError('The Sample Location is not a python '
+                                     'object. ex. list, dict, etc.')
+            ipt[self.field_oi + '_location'] = [img if
+                                                type(img)!=np.array else
+                                                'Image Given Unknown ' \
+                                                'Location'
+                                                for img in ipt[self.field_oi]]
+            ipt[self.field_oi] = [Image.open(img) if
+                                  type(img)!=np.array else
                                   img
                                   for img in ipt[self.field_oi]]
 
@@ -103,6 +135,50 @@ class Resample_nii_spacing(_TensorProcessing):
             res.append(res_img)
         ipt[self.field_oi] = res
         ipt['resample_meta_data'] = res_data
+        return ipt
+
+class Resample_Image_shape(_TensorProcessing):
+    def __init__(self, mode = Image.BILINEAR, new_size = (32, 32), field_oi='X',
+                 output_dtype=np.uint8):
+        super(Resample_Image_shape, self).__init__()
+        self.field_oi= field_oi
+        self.new_size = list(new_size)
+        self.mode = mode
+        if type(output_dtype)==str:
+            try:
+                output_dtype = eval(output_dtype)
+            except:
+                raise Exception('The datatype input is not a type that can be '
+                                'put through eval()')
+        self.output_dtype = output_dtype
+
+    def get_reciprical(self, **kwargs):
+        return NotImplementedError()
+
+    def resample_function(self, image, meta_data=None):
+        if not meta_data:
+            orig_size = image.size
+            new_size = self.new_size
+            meta_data = {'orig_size': [int(v) for v in orig_size],
+                         'new_size': [int(v) for v in new_size]}
+
+        return image.resize(self.new_size, self.mode), \
+               meta_data
+
+    def __call__(self, ipt):
+        res = []
+        if all([sp is None for sp in self.new_size]):
+            return ipt
+        if 'resize_meta_data' in ipt.keys():
+            res_data = ipt['resize_meta_data']
+        else:
+            res_data = None
+        for img in ipt[self.field_oi]:
+
+            res_img, res_data = self.resample_function(img, res_data)
+            res.append(res_img)
+        ipt[self.field_oi] = res
+        ipt['resize_meta_data'] = res_data
         return ipt
 
 class Resample_nii_shape(_TensorProcessing):
@@ -192,6 +268,30 @@ class Reverse_Resample_nii(_TensorProcessing):
 
         return ipt
 
+class Reverse_Resample_Image(_TensorProcessing):
+    def __init__(self, mode = sitk.sitkLinear, field_oi='pred_y'):
+        super(Reverse_Resample_Image, self).__init__()
+        raise NotImplementedError
+        # self.field_oi = field_oi
+        # self.resampler = sitk.ResampleImageFilter()
+        # self.mode = mode
+
+    # def __call__(self, ipt):
+    #     original = deepcopy(ipt)
+    #     meta_data = ipt['resample_meta_data']
+    #     self.resampler.SetInterpolator(self.mode)
+    #     self.resampler.SetSize([int(x) for x in meta_data['orig_size']])
+    #     self.resampler.SetOutputSpacing(meta_data['orig_spc'])
+    #     self.resampler.SetOutputOrigin(meta_data['orig_org'])
+    #     self.resampler.SetOutputDirection(meta_data['orig_dir'])
+    #     img_res = []
+    #     for img in ipt[self.field_oi]:
+    #         img = self.resampler.Execute(img)
+    #         img_res.append(sitk.Cast(img, sitk.sitkUInt8))
+    #     ipt[self.field_oi] = img_res
+    #
+    #     return ipt
+
 class Cast_nii(_TensorProcessing):
     def __init__(self, data_type=sitk.sitkFloat32, field_oi='X'):
         super(Cast_nii, self).__init__()
@@ -263,6 +363,32 @@ class SITKToNumpy(_TensorProcessing):
         ipt[self.field_oi] = [sitk.GetArrayFromImage(img) for img in ipt[self.field_oi]]
         return ipt
 
+class ImageToNumpy(_TensorProcessing):
+    def __init__(self, field_oi='X'):
+        super(ImageToNumpy, self).__init__()
+        self.field_oi = field_oi
+
+    def get_reciprical(self, **kwargs):
+        return NumpyToSITK(**kwargs)
+
+    def __call__(self, ipt):
+        ipt[self.field_oi] = [np.array(img) for img in ipt[self.field_oi]]
+        return ipt
+
+class NumpyToImage(_TensorProcessing):
+    def __init__(self, field_oi='X', mode=None):
+        super(NumpyToImage, self).__init__()
+        self.field_oi = field_oi
+        self.mode= mode
+
+    def get_reciprical(self, **kwargs):
+        return ImageToNumpy(**kwargs)
+
+    def __call__(self, ipt):
+        ipt[self.field_oi] = [Image.fromarray(img, mode=self.mode) for img in
+                              ipt[
+            self.field_oi]]
+        return ipt
 
 def set_all_image_data(image, data):
     image.SetOrigin(data['orig_org'])
@@ -344,13 +470,9 @@ class Pad_to_Size_numpy(_TensorProcessing):
             scan_indices = ipt['padding_meta_data']['scan_indices']
             opt_indices = ipt['padding_meta_data']['opt_indices']
         else:
-            scan_indices = [(0, scan_shape[0]),
-                            (0, scan_shape[1]),
-                            (0, scan_shape[2])]
-            opt_indices = [(0, self.shape[0]),
-                           (0, self.shape[1]),
-                           (0, self.shape[2])]
-            centering = [0, 0, 0]
+            scan_indices = [(0, sc_sh) for sc_sh in scan_shape]
+            opt_indices = [(0, sh) for sh in self.shape]
+            centering = [0 for _ in range(len(scan_shape))]
             if self.centre:
                 centering = [c if c is not None else centering[i]
                              for i, c in enumerate(self.centre)]
@@ -389,19 +511,32 @@ class Pad_to_Size_numpy(_TensorProcessing):
 
         temp = ipt[self.field_oi]
 
-        start = [np.ones(self.shape) * t[0,0,0] for t in temp]
+        start = [np.ones(self.shape) * t[0] for t in temp]
 
         for i in range(len(temp)):
-            start[i][
-            opt_indices[0][0]:opt_indices[0][1],
-            opt_indices[1][0]:opt_indices[1][1],
-            opt_indices[2][0]:opt_indices[2][1]
-            ] = \
-                temp[i][
-                scan_indices[0][0]:scan_indices[0][1],
-                scan_indices[1][0]:scan_indices[1][1],
-                scan_indices[2][0]:scan_indices[2][1]
-                ]
+            if len(scan_shape) == 3:
+                start[i][
+                opt_indices[0][0]:opt_indices[0][1],
+                opt_indices[1][0]:opt_indices[1][1],
+                opt_indices[2][0]:opt_indices[2][1]
+                ] = \
+                    temp[i][
+                    scan_indices[0][0]:scan_indices[0][1],
+                    scan_indices[1][0]:scan_indices[1][1],
+                    scan_indices[2][0]:scan_indices[2][1]
+                    ]
+            elif len(scan_shape) == 2:
+                start[i][
+                opt_indices[0][0]:opt_indices[0][1],
+                opt_indices[1][0]:opt_indices[1][1]
+                ] = \
+                    temp[i][
+                    scan_indices[0][0]:scan_indices[0][1],
+                    scan_indices[1][0]:scan_indices[1][1]
+                    ]
+            else:
+                raise Exception('Pad_to_Size_numpy does not support numpy '
+                                'arrays outside of 2 and 3 dimensionality. ')
         ipt[self.field_oi] = start
 
         return ipt
@@ -459,6 +594,14 @@ class ToTensor(_TensorProcessing):
             ipt[self.field_oi] = torch.tensor(ipt[self.field_oi],
                                               dtype=self.dtype)
         return ipt
+
+class OneHotEncode(_TensorProcessing):
+    def __init__(self):
+        super(OneHotEncode, self).__init__()
+        pass
+
+    def __call__(self, *args, **kwargs):
+        print('')
 
 class OneHotEncode_seg(_TensorProcessing):
     def __init__(self, max_class, field_oi='y'):

@@ -36,21 +36,25 @@ class PTPractitioner_config(project_config):
         self.loss_type = loss_type
         self.batch_size=batch_size
         self.n_epochs = n_epochs
-        self.n_steps = n_steps
+        self.n_saves = n_saves
+        if n_steps is not None:
+            self.n_steps = n_steps
+            self.vl_interval = int(np.round(self.n_steps / self.n_saves))
+        else:
+            self.n_steps = None
+            self.vl_interval = None
         self.warmup = warmup
         self.lr_decay = lr_decay
-        self.n_saves = n_saves
         self.optimizer = optimizer
         self.lr = lr
         self.grad_clip = grad_clip
-        self.vl_interval = int(np.round(self.n_steps/self.n_saves))
         self.trained_steps = 0
         self.data_parallel = data_parallel
         if validation_criteria=='min':
             self.best_vl_loss = np.inf
             self.best_vl_step = 0
         else:
-            self.best_vl_loss = 0.0
+            self.best_vl_loss = -np.inf
             self.best_vl_step = 0
 
         self.validation_criteria = validation_criteria
@@ -207,23 +211,26 @@ class PT_Practitioner(object):
         elif self.config.optimizer=='sgd':
             self.optmzr = torch.optim.SGD(self.model.parameters(),
                                           lr=self.config.lr)
+        elif self.config.optimizer=='adadelta':
+            self.optmzr = torch.optim.Adadelta(self.model.parameters(),
+                                               lr=self.config.lr)
         else:
             raise ValueError(str(self.config.optimizer) + ' is not a '
                                                           'recognizable '
                                                           'optimizer')
 
         self.config.warmup_steps = int(np.round(self.config.n_steps*self.config.warmup))
-
-        if self.config.lr_decay:
-            self.scheduler = \
-                get_cosine_schedule_with_warmup(
-                    self.optmzr,
-                    num_warmup_steps=self.config.warmup_steps,
-                    num_training_steps=self.config.n_steps,
-                    num_cycles=0.4
-                )
-        else:
-            pass
+        raise NotImplementedError('Need to update learning rate decay options')
+        # if self.config.lr_decay:
+        #     self.scheduler = \
+        #         get_cosine_schedule_with_warmup(
+        #             self.optmzr,
+        #             num_warmup_steps=self.config.warmup_steps,
+        #             num_training_steps=self.config.n_steps,
+        #             num_cycles=0.4
+        #         )
+        # else:
+        #     pass
 
     def setup_loss_functions(self):
         if self.config.loss_type=='MSE':
@@ -250,14 +257,24 @@ class PT_Practitioner(object):
 
     def train_model(self):
         tr_dtldr = self.setup_dataloader('training')
+        raise Exception(' Need to make config functions to set all of '
+                        'n_epochs, n_steps, vl_interval, and warmup steps '
+                        'when setting n_epochs or n_steps ')
+        if self.config.n_steps is None and not self.config.n_epochs is None:
+            self.config.n_steps = len(tr_dtldr)*self.config.n_epochs
+        elif self.config.n_epochs is None and not self.config.n_steps is None:
+            self.config.set_n_epochs(len(self.data_processor.tr_dset))
+        else:
+            raise Exception('n_epochs and n_steps cannot both be None in the '
+                            'PT_Pracitioner_config')
+
         if hasattr(self.data_processor, 'vl_dset'):
             vl_dtldr = self.setup_dataloader('validation')
         else:
             vl_dtldr = None
+
         self.setup_loss_functions()
         self.setup_training_accessories()
-
-        self.config.set_n_epochs(len(self.data_processor.tr_dset))
 
         if torch.cuda.is_available():
             self.io_manager.set_best_model(

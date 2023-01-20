@@ -53,15 +53,13 @@ class _Statistical_Project():
         val_list = None
         test_list = None
         if self.config.test_size>0.0:
-            list_examples, test_list = train_test_split(
-                list_examples,
+            ls, test_list = train_test_split(
+                list(zip(list_examples,stratification)),
                 stratify=stratification,
                 test_size=self.config.test_size,
                 random_state=self.config.r_seed
             )
-            stratification = [
-                stratification[list_examples.index(x)]
-                for x in list_examples]
+            list_examples, stratification = (list(t) for t in list(zip(*ls)))
         if self.config.validation_size>0.0:
             train_list, val_list = train_test_split(
                 list_examples,

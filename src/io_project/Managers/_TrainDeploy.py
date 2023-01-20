@@ -22,12 +22,13 @@ class _TrainDeploy(_Statistical_Project):
         data_file = self.remap_y(data_file)
 
         if self.config.group_data_by in data_file.columns:
-            session_list =  list(set(
-                data_file[self.config.group_data_by].values.tolist()
-            ))
+            pass
         else:
-            raise NotImplementedError('Row index option needs to be implemented '
-                                      'on the IO manager.')
+            self.config.group_data_by = 'index_column'
+            data_file[self.config.group_data_by] = data_file.index
+        session_list = list(set(
+            data_file[self.config.group_data_by].values.tolist()
+        ))
 
 
         if self.config.val_data_csv_location and os.path.exists(self.config.val_data_csv_location):
@@ -47,11 +48,10 @@ class _TrainDeploy(_Statistical_Project):
                     tmp_strtfy_by = 'y'
                 assert type(tmp_strtfy_by)==str
                 assert tmp_strtfy_by in data_file.columns
-                strat = [
-                    data_file[
-                        data_file[self.config.group_data_by]==x
-                        ][tmp_strtfy_by].to_list()[0] for x in session_list
-                ]
+                strat = data_file.iloc[
+                    [getattr(data_file,self.config.group_data_by).eq(x).idxmax()
+                     for x in session_list]
+                ][tmp_strtfy_by].to_list()
                 train_list, val_list, test_list = self.stratified_data_split(
                     session_list, strat)
             else:

@@ -11,7 +11,7 @@ class _TensorProcessing(object):
         raise NotImplementedError('The call has not been impleneted for ' +
                                   str(self.__class__))
 
-### Img PRocessing Files
+### Img Processing Files
 from .img_intensity import *
 from .img_shape import *
 from .img_augmentation import *
