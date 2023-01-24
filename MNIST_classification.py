@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 
 import src as proteam
-
+from src.project_config import project_config
 import os
 
 r_seed = 20230117
@@ -46,6 +46,7 @@ opt = parser.parse_args()
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+        self.config = project_config('Net')
         self.conv1 = nn.Conv2d(1, 32, 3, 1)
         self.conv2 = nn.Conv2d(32, 64, 3, 1)
         self.dropout1 = nn.Dropout(0.25)
@@ -126,7 +127,9 @@ dt_args={
     'silo_dtype': 'np.uint8',
     'numpy_shape': (28,28),
     'pad_shape':(28,28),
-    'pre_load':True
+    'pre_load':True,
+    'one_hot_encode': False,
+    'max_classes': 10
 }
 
 dt_project_cnfg = proteam.dt_project.Image_Processor_config(**dt_args)
@@ -145,7 +148,10 @@ ml_args = {
     'n_epochs':opt.epochs,
     'n_steps':None,
     'warmup':0.0,
-    'lr_decay':None,
+    'lr_decay':'steplr',
+    'lr_decay_stepsize': 1,
+    'lr_decay_gamma': 0.1,
+    'lr_decay_step_timing': 'epoch',
     'n_saves':10,
     'validation_criteria':'min',
     'optimizer':'adadelta',
@@ -155,7 +161,7 @@ ml_args = {
     'affine_aug':False,
     'add_Gnoise':False,
     'gaussian_std':1.0,
-    'normalization_percentiles':(0.0,100.0),
+    'normalization_percentiles':None,
     'normalization_channels':[(0.1307,0.3081)],
     'n_workers':0,
     'visualize_val':False,

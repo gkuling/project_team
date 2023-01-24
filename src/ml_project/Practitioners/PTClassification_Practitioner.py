@@ -13,10 +13,12 @@ from torchvision import transforms
 class PTClassification_Practitioner_config(PTPractitioner_config,
                                        project_config):
     def __init__(self,
+                 one_hot_encode=False,
                  **kwargs):
         super(PTClassification_Practitioner_config, self).__init__(
             config_type ='ML_PTClassificationPractitioner', **kwargs
         )
+        self.one_hot_encode = one_hot_encode
 
 class PTClassification_Practitioner(PT_Practitioner):
     def __init__(self, model, io_manager, data_processor,
@@ -26,11 +28,7 @@ class PTClassification_Practitioner(PT_Practitioner):
                                                 data_processor=data_processor,
                                                 trainer_config=trainer_config)
         self.practitioner_name = 'PTClassification'
-
-        self.standard_transforms.extend([
-            OneHotEncode(),
-            ToTensor(field_oi='y')
-        ])
+        self.standard_transforms.extend([ToTensor(field_oi='y')])
 
     def validate_model(self, mdl, val_dataloader):
         print('')

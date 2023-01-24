@@ -12,12 +12,16 @@ class Image_Processor_config(DT_config):
                  numpy_shape=(28,28),
                  pad_shape=(28,28),
                  pre_load=True,
+                 one_hot_encode=False,
+                 max_classes=1,
                  **kwargs
                  ):
         super(Image_Processor_config, self).__init__(pre_load)
         self.silo_dtype=silo_dtype
         self.numpy_shape=numpy_shape
         self.pad_shape = pad_shape
+        self.one_hot_encode = one_hot_encode
+        self.max_classes = max_classes
 
 class Image_Processor(object):
     def __init__(self, image_processor_config=Image_Processor_config()):
@@ -30,6 +34,11 @@ class Image_Processor(object):
             ImageToNumpy(),
             Pad_to_Size_numpy(shape=self.config.pad_shape)
         ]
+        if self.config.one_hot_encode:
+            pre_transforms.append(OneHotEncode(
+                max_class=self.config.max_classes,
+                field_oi='y'
+            ))
         self.pre_transforms = transforms.Compose(pre_transforms)
 
 

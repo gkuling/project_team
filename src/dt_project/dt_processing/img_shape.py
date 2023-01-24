@@ -596,12 +596,23 @@ class ToTensor(_TensorProcessing):
         return ipt
 
 class OneHotEncode(_TensorProcessing):
-    def __init__(self):
+    def __init__(self,max_class, field_oi='y'):
         super(OneHotEncode, self).__init__()
-        pass
+        self.number_of_classes = max_class
+        self.field_oi = field_oi
 
-    def __call__(self, *args, **kwargs):
-        print('')
+    def __call__(self, ipt):
+        # Fast wrote this, it maybe completely wrong. Apologies
+        assert type(ipt[self.field_oi])==int
+
+        new_y = [0] * self.number_of_classes
+
+        new_y[ipt[self.field_oi]] = 1.0
+        ipt[self.field_oi + '_original'] = deepcopy(ipt[self.field_oi])
+
+        ipt[self.field_oi] = new_y
+
+        return ipt
 
 class OneHotEncode_seg(_TensorProcessing):
     def __init__(self, max_class, field_oi='y'):

@@ -39,15 +39,18 @@ class MnStdNormalize_Numpy(_TensorProcessing):
             if img[i].max()==img[i].min():
                 clipped = img[i]
             else:
-                upper = np.percentile(img[i][img[i]!=0], self.percentiles[1])
+                if self.percentiles is not None:
+                    upper = np.percentile(img[i][img[i]!=0], self.percentiles[1])
 
-                lower = np.percentile(img[i][img[i]!=0], self.percentiles[0])
+                    lower = np.percentile(img[i][img[i]!=0], self.percentiles[0])
+                else:
+                    upper=img[i].max()
+                    lower = img[i].min()
+
                 assert upper>lower
                 clipped = np.clip(img[i], a_min=lower, a_max=upper)
 
                 clipped -= lower
-                if clipped.max()==0:
-                    print('')
                 clipped /= clipped.max()
 
             norm_img = (clipped-nrm[0])/nrm[1]
