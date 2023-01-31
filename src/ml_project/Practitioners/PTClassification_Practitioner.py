@@ -92,7 +92,7 @@ class PTClassification_Practitioner(PT_Practitioner):
             else:
                 res['pred_y'] = pred.numpy()
 
-            if hasattr(self.model, 'config')and  hasattr(self.model.config, \
+            if hasattr(self.model, 'config') and  hasattr(self.model.config, \
                     'output_style'):
                 style = self.model.config.output_style
             elif hasattr(self.model, 'module') and \
@@ -100,24 +100,27 @@ class PTClassification_Practitioner(PT_Practitioner):
                 hasattr(self.model.module.config, 'output_style'):
                 style = self.model.module.config.output_style
             else:
-                style = 'continuous'
+                style = 'softmax'
 
 
-            if style == 'CORAL':
-                res['pred_y'] = (
-                                        sigmoid(res['pred_y'])>0.5
-                                ).sum() / res['pred_y'].shape[1]
-            if style=='softlabel':
-                res['pred_y'] = np.argmax(
-                    res['pred_y']
-                ) / (res['pred_y'].shape[1] - 1)
-            if style=='continuous':
-                res['pred_y'] = res['pred_y'].item()
-            if style=='patchGAN':
-                res['pred_y'] = res['pred_y'].mean().item()
-            if style=='binary':
-                res['pred_y'] = softmax(res['pred_y'],
-                                        axis=1)[:,1].item()
+            if style == 'softmax':
+                res['pred_y'] = res['pred_y'].argmax()
+                if hasattr(self.io_manager.exp_type.config,'y_domain'):
+                    res['pred_y'] = self.io_manager.exp_type.config.y_domain[
+                        res['pred_y']
+                    ]
+            elif style == 'sigmoid':
+                res['pred_y'] = sigmoid(res['pred_y'])>0.5
+                if hasattr(self.io_manager.exp_type.config,'y_domain'):
+                    res['pred_y'] = [
+                        self.io_manager.exp_type.config.y_domain[_]
+                        for _ in range(res['pred_y'].shape[1])
+                        if res['pred_y'][_]==1
+                    ]
+            else:
+                raise Exception(' the ouput_style is not recognized. ' + str(
+                    style))
+
 
             return_results.append(res)
         self.data_processor.inference_results = pd.DataFrame(

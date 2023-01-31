@@ -60,6 +60,7 @@ class _Statistical_Project():
                 random_state=self.config.r_seed
             )
             list_examples, stratification = (list(t) for t in list(zip(*ls)))
+            test_list, ts_strat  = (list(t) for t in list(zip(*test_list)))
         if self.config.validation_size>0.0:
             train_list, val_list = train_test_split(
                 list_examples,

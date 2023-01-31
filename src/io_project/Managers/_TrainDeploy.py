@@ -16,7 +16,13 @@ class _TrainDeploy(_Statistical_Project):
     def prepare_for_experiment(self):
         print('IO Message: Setting up data for training')
         self.config.save_pretrained(self.root)
-        data_file = pd.read_csv(self.config.data_csv_location)
+        if type(self.config.data_csv_location)==pd.DataFrame:
+            data_file = self.config.data_csv_location
+        elif os.path.exists(self.config.data_csv_location):
+            data_file = pd.read_csv(self.config.data_csv_location)
+        else:
+            raise Exception('The data_csv_location given is not a pandas '
+                            'dataframe or a file that exists. ')
 
         data_file = self.remap_X(data_file)
         data_file = self.remap_y(data_file)
@@ -48,10 +54,20 @@ class _TrainDeploy(_Statistical_Project):
                     tmp_strtfy_by = 'y'
                 assert type(tmp_strtfy_by)==str
                 assert tmp_strtfy_by in data_file.columns
-                strat = data_file.iloc[
-                    [getattr(data_file,self.config.group_data_by).eq(x).idxmax()
-                     for x in session_list]
-                ][tmp_strtfy_by].to_list()
+                try:
+                    strat = data_file.iloc[
+                        [getattr(data_file,self.config.group_data_by).eq(x).idxmax()
+                         for x in session_list]
+                    ][tmp_strtfy_by].to_list()
+                except Exception as e:
+                    if type(e)==IndexError:
+                        raise IndexError('Using row index to group_data_by '
+                                         'requires that the '
+                                         'index of the dataframe be 0 to n. '
+                                         'Use df.reset_index() to avoid this '
+                                         'IndexError. ')
+                    else:
+                        raise e
                 train_list, val_list, test_list = self.stratified_data_split(
                     session_list, strat)
             else:
