@@ -1,5 +1,13 @@
 # project_team
 
+## Conda Environment Setup 
+
+This project was developed using conda environments. To build the conda environment use the line of code below from the command line
+
+```angular2html
+conda create --name pro_team_env --channel default --channel conda-forge --channel pytorch --file requirements.txt
+```
+
 ## Framework 
 
 This is a package to organize, execute, and persist machine learning and applied statistical models. 

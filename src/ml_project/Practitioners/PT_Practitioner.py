@@ -454,9 +454,13 @@ class PT_Practitioner(object):
         elif self.config.loss_type=='NLL':
             if y.dim()==1:
                 return self.loss_function(torch.log_softmax(py, dim=1),
+                                          y.type(torch.cuda.LongTensor)
+                                          if torch.cuda.is_available() else
                                           y.type(torch.LongTensor))
             elif y.shape[1]==1:
                 return self.loss_function(torch.log_softmax(py, dim=1),
+                                          y.type(torch.cuda.LongTensor)[:,0]
+                                          if torch.cuda.is_available() else
                                           y.type(torch.LongTensor)[:,0])
             else:
                 raise Exception('NLL loss tearget not being used properly. '
