@@ -5,7 +5,7 @@
 This project was developed using conda environments. To build the conda environment use the line of code below from the command line
 
 ```angular2html
-conda create --name pro_team_env --channel default --channel conda-forge --channel pytorch --file requirements.txt
+conda create --name pro_team_env --channel default --channel conda-forge --channel pytorch --channel main --file requirements.txt
 ```
 
 ## Framework 
