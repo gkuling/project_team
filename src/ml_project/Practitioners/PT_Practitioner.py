@@ -277,6 +277,8 @@ class PT_Practitioner(object):
             self.config.n_steps = tr_size * self.config.n_epochs
         elif self.config.n_epochs is None and not self.config.n_steps is None:
             self.config.set_n_epochs(len(self.data_processor.tr_dset))
+        elif not self.config.n_epochs is None and not self.config.n_steps is None:
+            pass
         else:
             raise Exception('n_epochs and n_steps cannot both be None in the '
                             'PT_Pracitioner_config')
@@ -287,6 +289,8 @@ class PT_Practitioner(object):
             self.config.n_saves = \
                 np.round(self.config.n_steps / self.config.vl_interval).astype(
                     int)
+        elif not self.config.vl_interval is None and not self.config.n_saves is None:
+            pass
         else:
             raise Exception(
                 'vl_interval and n_saves cannot both be None in the '

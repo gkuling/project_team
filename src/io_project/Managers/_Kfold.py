@@ -24,24 +24,14 @@ class _Kfold(_Statistical_Project):
         print('IO Message: Setting up data for kfold experiment')
         self.config.save_pretrained(self.root)
         data_file = pd.read_csv(self.config.data_csv_location)
+        data_file = self.remap_X(data_file)
+        data_file = self.remap_y(data_file)
 
+        data_file, session_list = self.get_session_list(data_file)
 
-        if self.config.group_data_by in data_file.columns:
-            session_list =  list(set(
-                data_file[self.config.group_data_by].values.tolist()
-            ))
-            session_list.sort()
-        else:
-            raise NotImplementedError('Row index option needs to be implemented '
-                                      'on the IO manager.')
         self.folds = []
         if self.config.stratify_by:
-            assert type(self.config.stratify_by)==str
-            assert self.config.stratify_by in data_file.columns
-            strat = [
-                data_file[data_file[self.config.group_data_by]==x][
-                    self.config.stratify_by].to_list()[0]
-                for x in session_list]
+            strat = self.stratify_data(data_file, session_list)
             if self.config.validation_size>0.0:
                 kfold_analyzer = StratifiedKFold(n_splits=self.config.k_folds,
                                                  shuffle=True,
@@ -110,6 +100,8 @@ class _Kfold(_Statistical_Project):
 
         data_file = self.remap_X(data_file)
         data_file = self.remap_y(data_file)
+
+        data_file, session_list = self.get_session_list(data_file)
 
         fold = self.folds[k_fold_step]
         train_list = fold['train']
@@ -180,6 +172,11 @@ class _Kfold(_Statistical_Project):
                 ignore_index=True
             )
         else:
+            k_fold_test_res.reset_index(drop=True, inplace=True)
+            k_fold_test_res.loc['mean'] = k_fold_test_res.mean()
+            k_fold_test_res.loc['std'] = k_fold_test_res.std()
+            k_fold_test_res.reset_index(drop=False, inplace=True)
+            k_fold_test_res.rename(columns={'index':'Fold'}, inplace=True)
             output_results = k_fold_test_res
 
 

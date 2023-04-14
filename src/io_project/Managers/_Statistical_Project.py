@@ -90,3 +90,26 @@ class _Statistical_Project():
         else:
             train_list = list_examples
         return train_list, val_list, test_list
+
+    def get_session_list(self, data):
+        if self.config.group_data_by in data.columns:
+            pass
+        else:
+            self.config.group_data_by = 'index_column'
+            data[self.config.group_data_by] = data.index
+        return data, list(set(
+            data[self.config.group_data_by].values.tolist()
+        ))
+
+    def stratify_data(self, data, sessions):
+        tmp_strtfy_by = self.config.stratify_by
+        if tmp_strtfy_by == self.config.y:
+            tmp_strtfy_by = 'y'
+        assert type(tmp_strtfy_by) == str, \
+            "Stratify by value must be string."
+        assert tmp_strtfy_by in data.columns, \
+            "Stratify by value must be a column in your dataset."
+        return data.iloc[
+            [getattr(data, self.config.group_data_by).eq(x).idxmax()
+             for x in sessions]
+        ][tmp_strtfy_by].to_list()

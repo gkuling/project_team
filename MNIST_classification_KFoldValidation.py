@@ -133,19 +133,15 @@ processor = proteam.dt_project.Image_Processor(
 # Prepare model
 mdl = Net(Net_config(**mdl_args))
 
-# Prepare Practitioner
-ml_project_cnfg = proteam.ml_project.PTClassification_Practitioner_config(
-    **ml_args)
-
-
-
 # Perform KFold Validation
 starting_fold = 0
 for k in range(starting_fold, manager.config.k_folds):
     manager.set_fold(k)
 
     mdl = deepcopy(mdl)
-
+    # Prepare Practitioner
+    ml_project_cnfg = proteam.ml_project.PTClassification_Practitioner_config(
+        **ml_args)
     practitioner = proteam.ml_project.PTClassification_Practitioner(
         model=mdl,
         io_manager=manager,
@@ -165,13 +161,13 @@ for k in range(starting_fold, manager.config.k_folds):
         )
     )
     evaluator.evaluate(processor.inference_results)
-    performance = manager.evaluate_performance(
-        evaluator.eval_results)
     manager.save_dataframe(evaluator.eval_results, 'test_result_evaluation')
     print(' Finished running fold number: ' + str(
         k))
+    print('-'*120)
 
-manager.finished_kfild_validation()
+
+manager.finished_kfold_validation()
 
 print('End of MNIST_Classification_KFoldValidation.py')
 

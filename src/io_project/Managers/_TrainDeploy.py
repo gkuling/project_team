@@ -27,16 +27,9 @@ class _TrainDeploy(_Statistical_Project):
         data_file = self.remap_X(data_file)
         data_file = self.remap_y(data_file)
 
-        if self.config.group_data_by in data_file.columns:
-            pass
-        else:
-            self.config.group_data_by = 'index_column'
-            data_file[self.config.group_data_by] = data_file.index
-        session_list = list(set(
-            data_file[self.config.group_data_by].values.tolist()
-        ))
+        data_file, session_list = self.get_session_list(data_file)
 
-
+        ### COME BACK FOR THIS SECTION
         if self.config.val_data_csv_location and \
                 os.path.exists(self.config.val_data_csv_location):
             vl_data_df = pd.read_csv(self.config.val_data_csv_location)
@@ -50,18 +43,8 @@ class _TrainDeploy(_Statistical_Project):
         else:
 
             if self.config.stratify_by:
-                tmp_strtfy_by = self.config.stratify_by
-                if tmp_strtfy_by==self.config.y:
-                    tmp_strtfy_by = 'y'
-                assert type(tmp_strtfy_by) == str, \
-                    "Stratify by value must be string."
-                assert tmp_strtfy_by in data_file.columns, \
-                    "Stratify by value must be a column in your dataset."
                 try:
-                    strat = data_file.iloc[
-                        [getattr(data_file,self.config.group_data_by).eq(x).idxmax()
-                         for x in session_list]
-                    ][tmp_strtfy_by].to_list()
+                    strat = self.stratify_data(data_file, session_list)
                 except Exception as e:
                     if type(e)==IndexError:
                         raise IndexError('Using row index to group_data_by '
