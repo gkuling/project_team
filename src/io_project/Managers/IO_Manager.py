@@ -19,4 +19,4 @@ class IO_Manager(object):
         return getattr(self.exp_type, item)
 
     def save_dataframe(self, df, name):
-        df.to_csv(self.root + '/' + name + '.csv', index=False)
+        df.to_csv(os.path.join(self.root, name + '.csv'), index=False)

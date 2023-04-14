@@ -10,7 +10,7 @@ class Image_Processor_config(DT_config):
     def __init__(self,
                  silo_dtype='numpy.float32',
                  numpy_shape=(28,28),
-                 pad_shape=(28,28),
+                 pad_shape=None,
                  pre_load=True,
                  one_hot_encode=False,
                  max_classes=1,
@@ -31,9 +31,13 @@ class Image_Processor(object):
             OpenImage_file(),
             Resample_Image_shape(new_size=self.config.numpy_shape,
                          output_dtype=self.config.silo_dtype),
-            ImageToNumpy(),
-            Pad_to_Size_numpy(shape=self.config.pad_shape)
+            ImageToNumpy()
         ]
+        if self.config.pad_shape is tuple and all([x is int for x in
+                                                   self.config.pad_shape]):
+            pre_transforms.append(
+                Pad_to_Size_numpy(shape=self.config.pad_shape)
+            )
         if self.config.one_hot_encode:
             pre_transforms.append(OneHotEncode(
                 max_class=self.config.max_classes,

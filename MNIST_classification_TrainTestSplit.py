@@ -14,8 +14,7 @@ import os
 r_seed = 20230117
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--working_dir',type=str,
-                    default='/amartel_data/Grey/pro_team_examples'
-                            '/TrainTestSplit',
+                    default='/amartel_data/Grey/pro_team_examples',
                     help='The current directory to save models, and configs '
                          'of the experiment')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -47,11 +46,11 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.config = project_config('Net')
         self.config.output_style = 'softmax'
-        self.conv1 = nn.Conv2d(1, 32, 3, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.conv1 = nn.Conv2d(1, 32, 5, 1)
+        self.conv2 = nn.Conv2d(32, 64, 5, 1)
         self.dropout1 = nn.Dropout(0.25)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(9216, 128)
+        self.fc1 = nn.Linear(6400, 128)
         self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
@@ -125,7 +124,7 @@ manager = proteam.io_project.Pytorch_Manager(
 dt_args={
     'silo_dtype': 'np.uint8',
     'numpy_shape': (28,28),
-    'pad_shape':(28,28),
+    'pad_shape':None,
     'pre_load':True,
     'one_hot_encode': False,
     'max_classes': 10

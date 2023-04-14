@@ -12,7 +12,7 @@ from ._Statistical_Project import _Statistical_Project
 class io_hptuning_config(io_config):
     def __init__(self, data_csv_location, technique, training_portion,
                  criterion= 'ACC',
-                 penultimate='mean',
+                 penultimate=None,
                  iterations=None,
                  **kwargs):
         super(io_hptuning_config, self).__init__(data_csv_location, **kwargs)
@@ -29,7 +29,7 @@ class io_hptuning_config(io_config):
 
 class _HyperParameterTuning(_Statistical_Project):
     def __init__(self, io_config_input):
-        super(_HyperParameterTuning, self).__init__()
+        super(_HyperParameterTuning, self).__init__(io_config_input)
         assert type(io_config_input)==io_hptuning_config
 
         self.config = io_config_input
@@ -44,34 +44,60 @@ class _HyperParameterTuning(_Statistical_Project):
         data_file = self.remap_X(data_file)
         data_file = self.remap_y(data_file)
 
-
         if self.config.group_data_by in data_file.columns:
-            session_list =  list(set(
-                data_file[self.config.group_data_by].values.tolist()
-            ))
-
+            pass
         else:
-            raise NotImplementedError('Row index option needs to be implemented '
-                                      'on the IO manager.')
+            self.config.group_data_by = 'index_column'
+            data_file[self.config.group_data_by] = data_file.index
+        session_list = list(set(
+            data_file[self.config.group_data_by].values.tolist()
+        ))
         if self.config.stratify_by:
-            assert type(self.config.stratify_by)==str, "Stratify by value must be string."
-            assert self.config.stratify_by in data_file.columns, "Stratify by value must be a column in your dataset."
+            tmp_strtfy_by = self.config.stratify_by
+            if tmp_strtfy_by == self.config.y:
+                tmp_strtfy_by = 'y'
+            assert type(tmp_strtfy_by)==str, \
+                "Stratify by value must be string."
+            assert tmp_strtfy_by in data_file.columns,\
+                "Stratify by value must be a column in your dataset."
 
             if self.config.training_portion<1.0:
-                strat = [
-                    data_file[data_file[self.config.group_data_by]==x][
-                        self.config.stratify_by].to_list()[0]
-                    for x in session_list]
+                try:
+                    strat = data_file.iloc[
+                        [getattr(data_file, self.config.group_data_by).eq(
+                            x).idxmax()
+                         for x in session_list]
+                    ][tmp_strtfy_by].to_list()
+                except Exception as e:
+                    if type(e) == IndexError:
+                        raise IndexError('Using row index to group_data_by '
+                                         'requires that the '
+                                         'index of the dataframe be 0 to n. '
+                                         'Use df.reset_index() to avoid this '
+                                         'IndexError. ')
+                    else:
+                        raise e
                 _, session_list = train_test_split(
                     session_list,
                     stratify=strat,
                     test_size=self.config.training_portion,
                     random_state=self.config.r_seed
                 )
-            strat = [
-                data_file[data_file[self.config.group_data_by]==x][
-                    self.config.stratify_by].to_list()[0]
-                for x in session_list]
+            try:
+                strat = data_file.iloc[
+                    [getattr(data_file, self.config.group_data_by).eq(
+                        x).idxmax()
+                     for x in session_list]
+                ][tmp_strtfy_by].to_list()
+            except Exception as e:
+                if type(e) == IndexError:
+                    raise IndexError('Using row index to group_data_by '
+                                     'requires that the '
+                                     'index of the dataframe be 0 to n. '
+                                     'Use df.reset_index() to avoid this '
+                                     'IndexError. ')
+                else:
+                    raise e
             train_list, val_list, test_list = self.stratified_data_split(
                 session_list, strat
             )
@@ -162,7 +188,10 @@ class _HyperParameterTuning(_Statistical_Project):
                  fl]
             )
         res = pd.DataFrame(self.parameter_performances,
-                           columns=['Performance','Parameters','File'])
+                           columns=['Performance(' + self.config.criterion +
+                                    ')',
+                                    'Parameters',
+                                    'File'])
         res = pd.concat([res.drop(['Parameters'], axis=1),
                          res['Parameters'].apply(pd.Series)], axis=1)
         res.to_csv(self.original_root + '/Experimental_Results.csv', index=False)
@@ -186,6 +215,8 @@ class _HyperParameterTuning(_Statistical_Project):
             )
         elif callable(self.config.penultimate):
             return self.config.penultimate(eval_on)
+        elif self.config.penultimate is None:
+            return df[self.config.criterion].item()
         else:
             raise NotImplementedError(
                 str(self.config.penultimate) + ' is not implmented. '

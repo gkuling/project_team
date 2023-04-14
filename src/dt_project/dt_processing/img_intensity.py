@@ -50,8 +50,8 @@ class MnStdNormalize_Numpy(_TensorProcessing):
                 assert upper>lower
                 clipped = np.clip(img[i], a_min=lower, a_max=upper)
 
-                clipped -= lower
-                clipped /= clipped.max()
+                clipped = (clipped - lower)
+                clipped = (clipped / clipped.max())
 
             norm_img = (clipped-nrm[0])/nrm[1]
 

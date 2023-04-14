@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 class _Statistical_Project():
     def __init__(self,
-                 config=io_config()):
+                 config):
         self.config = config
 
         self.config = config

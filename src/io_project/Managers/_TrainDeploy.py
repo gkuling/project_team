@@ -37,7 +37,8 @@ class _TrainDeploy(_Statistical_Project):
         ))
 
 
-        if self.config.val_data_csv_location and os.path.exists(self.config.val_data_csv_location):
+        if self.config.val_data_csv_location and \
+                os.path.exists(self.config.val_data_csv_location):
             vl_data_df = pd.read_csv(self.config.val_data_csv_location)
 
             vl_data_df = self.remap_X(vl_data_df)
@@ -52,8 +53,10 @@ class _TrainDeploy(_Statistical_Project):
                 tmp_strtfy_by = self.config.stratify_by
                 if tmp_strtfy_by==self.config.y:
                     tmp_strtfy_by = 'y'
-                assert type(tmp_strtfy_by)==str
-                assert tmp_strtfy_by in data_file.columns
+                assert type(tmp_strtfy_by) == str, \
+                    "Stratify by value must be string."
+                assert tmp_strtfy_by in data_file.columns, \
+                    "Stratify by value must be a column in your dataset."
                 try:
                     strat = data_file.iloc[
                         [getattr(data_file,self.config.group_data_by).eq(x).idxmax()
