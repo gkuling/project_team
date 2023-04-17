@@ -1,15 +1,10 @@
 import argparse
 
 import pandas as pd
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torchvision import datasets
-from sklearn.metrics import accuracy_score
 
 import ml_project
 import src as proteam
-from src.project_config import project_config
 import os
 from copy import deepcopy
 
@@ -20,46 +15,6 @@ parser.add_argument('--working_dir',type=str,
                     help='The current directory to save models, and configs '
                          'of the experiment')
 opt = parser.parse_args()
-
-class Net_config(project_config):
-    def __init__(self, 
-                 kernel = 3,
-                 hidden_layer_parameters=128,
-                 numpy_shape=(28,28),
-                 **kwargs):
-        super(Net_config, self).__init__('Net')
-        self.kernel = kernel
-        self.hidden_layer_parameters = hidden_layer_parameters
-        self.output_style = 'softmax'
-        assert len(numpy_shape)==2
-        assert numpy_shape[0]==numpy_shape[1]
-        self.input_shape = numpy_shape
-
-class Net(nn.Module):
-    def __init__(self, config = Net_config()):
-        super(Net, self).__init__()
-        self.config = config
-        self.conv1 = nn.Conv2d(1, 32, self.config.kernel, 1)
-        self.conv2 = nn.Conv2d(32, 64, self.config.kernel, 1)
-        self.dropout1 = nn.Dropout(0.25)
-        self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(int(64*(self.config.input_shape[0]/2-2*int((self.config.kernel-1)/2))**2),
-                             self.config.hidden_layer_parameters)
-        self.fc2 = nn.Linear(self.config.hidden_layer_parameters, 10)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout1(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.dropout2(x)
-        output = self.fc2(x)
-        return output
 
 # Prepare data if not already saved and set up
 if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
@@ -131,7 +86,9 @@ processor = proteam.dt_project.Image_Processor(
 )
 
 # Prepare model
-mdl = Net(Net_config(**mdl_args))
+mdl = proteam.models.MNIST_CNN(
+    proteam.models.MNIST_CNN_config(**mdl_args)
+)
 
 # Perform KFold Validation
 starting_fold = 0
@@ -165,6 +122,7 @@ for k in range(starting_fold, manager.config.k_folds):
     print(' Finished running fold number: ' + str(
         k))
     print('-'*120)
+    break
 
 
 manager.finished_kfold_validation()

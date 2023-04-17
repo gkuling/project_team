@@ -1,15 +1,12 @@
 import argparse
 
 import pandas as pd
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torchvision import datasets
 from sklearn.metrics import accuracy_score
 
 import src as proteam
-from src.project_config import project_config
 import os
+from default_arguements import dt_args, ml_args, mdl_args
 
 r_seed = 20230117
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -21,51 +18,9 @@ parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                     help='input batch size for training (default: 64)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                     help='input batch size for testing (default: 1000)')
-parser.add_argument('--epochs', type=int, default=14, metavar='N',
+parser.add_argument('--epochs', type=int, default=1, metavar='N',
                     help='number of epochs to train (default: 14)')
-parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
-                    help='learning rate (default: 1.0)')
-parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
-                    help='Learning rate step gamma (default: 0.7)')
-parser.add_argument('--no-cuda', action='store_true', default=False,
-                    help='disables CUDA training')
-parser.add_argument('--no-mps', action='store_true', default=False,
-                    help='disables macOS GPU training')
-parser.add_argument('--dry-run', action='store_true', default=False,
-                    help='quickly check a single pass')
-parser.add_argument('--seed', type=int, default=20220113, metavar='S',
-                    help='random seed (default: 1)')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-                    help='how many batches to wait before logging training status')
-parser.add_argument('--save-model', action='store_true', default=False,
-                    help='For Saving the current Model')
 opt = parser.parse_args()
-
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.config = project_config('Net')
-        self.config.output_style = 'softmax'
-        self.conv1 = nn.Conv2d(1, 32, 5, 1)
-        self.conv2 = nn.Conv2d(32, 64, 5, 1)
-        self.dropout1 = nn.Dropout(0.25)
-        self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(6400, 128)
-        self.fc2 = nn.Linear(128, 10)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout1(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.dropout2(x)
-        output = self.fc2(x)
-        return output
 
 # Prepare data if not already saved and set up
 if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
@@ -121,15 +76,6 @@ manager = proteam.io_project.Pytorch_Manager(
 )
 
 # Prepare Processor
-dt_args={
-    'silo_dtype': 'np.uint8',
-    'numpy_shape': (28,28),
-    'pad_shape':None,
-    'pre_load':True,
-    'one_hot_encode': False,
-    'max_classes': 10
-}
-
 dt_project_cnfg = proteam.dt_project.Image_Processor_config(**dt_args)
 
 processor = proteam.dt_project.Image_Processor(
@@ -137,35 +83,12 @@ processor = proteam.dt_project.Image_Processor(
 )
 
 # Prepare model
-mdl = Net()
+# Prepare model
+mdl = proteam.models.MNIST_CNN(
+    proteam.models.MNIST_CNN_config(**mdl_args)
+)
 
 # Prepare Practitioner
-
-ml_args = {
-    'batch_size':opt.batch_size,
-    'n_epochs':opt.epochs,
-    'n_steps':None,
-    'warmup':0.0,
-    'lr_decay':'steplr',
-    'lr_decay_stepsize': 1,
-    'lr_decay_gamma': 0.1,
-    'lr_decay_step_timing': 'epoch',
-    'n_saves':10,
-    'validation_criteria':'min',
-    'optimizer':'adadelta',
-    'lr':opt.lr,
-    'grad_clip':None,
-    'loss_type':'NLL',
-    'affine_aug':False,
-    'add_Gnoise':False,
-    'gaussian_std':1.0,
-    'normalization_percentiles':None,
-    'normalization_channels':[(0.1307,0.3081)],
-    'n_workers':0,
-    'visualize_val':False,
-    'data_parallel':False
-}
-
 ml_project_cnfg = proteam.ml_project.PTClassification_Practitioner_config(
     **ml_args)
 

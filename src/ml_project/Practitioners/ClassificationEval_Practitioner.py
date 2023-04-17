@@ -122,7 +122,7 @@ class ClassificationEval_Practitioner():
                     ].append(np.mean(multiclass_res))
 
         self.eval_results = pd.DataFrame(self.eval_results)
-        print('ML Message: Finished Evaluation of segmentation maps.')
+        print('ML Message: Finished Evaluation of classification maps.')
 
     def evaluate_metric(self, met, p, g):
         individual_label_maps = [(g==float(u),p==float(u)) for u in
