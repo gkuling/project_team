@@ -12,11 +12,6 @@ from .Managers.IO_Manager import *
 
 # Base Specialized Package IO Managers
 from .Managers.Pytorch_Manager import *
-from .Managers.Clustering_Manager import *
-
-# Base Task Specialized Package IO Managers
-from .Managers.MedSeg_PT_Manager import *
-from .Managers.MedSeg_Cl_Manager import *
 
 # specified dicom identifier functions. But these are only accustom to
 # Sunnybrook so needs to be moved to custom functions before publication

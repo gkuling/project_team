@@ -1,7 +1,7 @@
 import gc
 
 import torch.optim
-from src.ml_project.segmentation_losses import GeneralizedDiceLoss
+from src.ml_project.Practitioners.segmentation_losses import GeneralizedDiceLoss
 from sklearn.metrics import multilabel_confusion_matrix
 from src.dt_project.dt_processing import *
 from torchvision import transforms
