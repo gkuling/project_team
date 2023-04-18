@@ -14,5 +14,4 @@ class _TensorProcessing(object):
 ### Img Processing Files
 from .img_intensity import *
 from .img_shape import *
-from .img_augmentation import *
-from .output_regression import *
+from .img_intensity import *

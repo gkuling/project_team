@@ -1,6 +1,6 @@
 import scipy.ndimage.interpolation as sni
-from .augmentation_utils import *
 from . import _TensorProcessing
+import numpy as np
 
 class AffineAugmentation(_TensorProcessing):
     def __init__(self, shift=1, rot=1, scale=0.1, dimensionality=3, field_oi='X',
@@ -169,21 +169,6 @@ class Scale_3DNumpy(_TensorProcessing):
                 out = img
             result.append(out)
         ipt[self.field_oi] = result
-        return ipt
-
-class GMM_DA_Augmentation(_TensorProcessing):
-    def __init__(self):
-        super(GMM_DA_Augmentation, self).__init__()
-        pass
-
-    def __call__(self, ipt):
-        # res = deepcopy(ipt)
-        ipt['X'] = [generate_gmm_image(im,
-                                       mask=ipt['y'][0],
-                                       n_components=2,
-                                       std_means=(50,50),
-                                       std_sigma=(50,50),
-                                       normalize=False) for im in ipt['X']]
         return ipt
 
 class AddGaussainNoise(_TensorProcessing):

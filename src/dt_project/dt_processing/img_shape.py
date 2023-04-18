@@ -1,43 +1,12 @@
 from PIL import Image
 import numpy as np
-import SimpleITK as sitk
 
 import torch
 import os
 from skimage.transform import resize
 
-from .augmentation_utils import *
 from . import _TensorProcessing
 from copy import deepcopy
-
-class OpenSITK_file(_TensorProcessing):
-    def __init__(self, field_oi='X'):
-        super(OpenSITK_file, self).__init__()
-        self.field_oi = field_oi
-
-    def __call__(self, ipt):
-
-        if type(ipt[self.field_oi])==str and os.path.exists(ipt[self.field_oi]):
-            ipt[self.field_oi + '_location'] = [ipt[self.field_oi]]
-            ipt[self.field_oi] = [sitk.ReadImage(ipt[self.field_oi])]
-        else:
-            if type(ipt[self.field_oi])!=list:
-                try:
-                    ipt[self.field_oi] = eval(ipt[self.field_oi])
-                except:
-                    raise ValueError('The Sample Location is not a python '
-                                     'object. ex. list, dict, etc.')
-            ipt[self.field_oi + '_location'] = [img if
-                                                type(img)!=sitk.Image else
-                                                'SITKImage Given Unknown ' \
-                                                'Location'
-                                                for img in ipt[self.field_oi]]
-            ipt[self.field_oi] = [sitk.ReadImage(img) if
-                                  type(img)!=sitk.Image else
-                                  img
-                                  for img in ipt[self.field_oi]]
-
-        return ipt
 
 class OpenImage_file(_TensorProcessing):
     def __init__(self, field_oi='X'):
@@ -66,75 +35,6 @@ class OpenImage_file(_TensorProcessing):
                                   img
                                   for img in ipt[self.field_oi]]
 
-        return ipt
-
-class Resample_nii_spacing(_TensorProcessing):
-    def __init__(self, mode = sitk.sitkLinear, spacing = (1.0, 1.0, 1.0),
-                 ignore_direction=True, field_oi='X',
-                 output_dtype=sitk.sitkFloat32):
-        super(Resample_nii_spacing, self).__init__()
-        self.resampler = sitk.ResampleImageFilter()
-        self.field_oi= field_oi
-        self.spacing = list(spacing)
-        self.mode = mode
-        self.ignore_direction = ignore_direction
-        if type(output_dtype)==str:
-            try:
-                output_dtype = eval(output_dtype)
-            except:
-                raise Exception('The datatype input is not a type that can be '
-                                'put through eval()')
-        self.output_dtype = output_dtype
-        # desired SITK Image direction : (-0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0,
-        # -1.0, 0.0)
-    def get_reciprical(self, **kwargs):
-        return Reverse_Resample_nii(**kwargs)
-
-    def resample_function(self, image, meta_data=None):
-        if not meta_data:
-            output_spacing = [sp if sp is not None
-                              else image.GetSpacing()[i]
-                              for i, sp in enumerate(self.spacing)]
-            orig_size = np.array(image.GetSize(), dtype=np.int)
-            orig_spacing = image.GetSpacing()
-            new_size = orig_size * (np.array(orig_spacing) / np.array(output_spacing))
-            new_size = np.ceil(new_size).astype(np.int).tolist()
-            meta_data = {'orig_size': [int(v) for v in orig_size],
-                         'orig_spc': list(orig_spacing),
-                         'orig_dir': image.GetDirection(),
-                         'orig_org': image.GetOrigin(),
-                         'new_size': [int(v) for v in new_size],
-                         'new_spc': list(output_spacing)}
-
-
-        self.resampler.SetInterpolator(self.mode)
-        self.resampler.SetOutputOrigin(meta_data['orig_org'])
-        self.resampler.SetOutputDirection(meta_data['orig_dir'])
-        self.resampler.SetSize(meta_data['new_size'])
-        self.resampler.SetOutputSpacing(meta_data['new_spc'])
-
-        return self.resampler.Execute(sitk.Cast(image, self.output_dtype)), \
-               meta_data
-
-    def __call__(self, ipt):
-        res = []
-        if all([sp is None for sp in self.spacing]):
-            return ipt
-        if 'resample_meta_data' in ipt.keys():
-            res_data = ipt['resample_meta_data']
-        else:
-            res_data = None
-        for img in ipt[self.field_oi]:
-            if img.GetDirection() != \
-                    (-0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0)  and \
-                    not self.ignore_direction:
-                raise Exception("Image Direction doesn't match. Edits need to be "
-                                "done or implemeneted")
-
-            res_img, res_data = self.resample_function(img, res_data)
-            res.append(res_img)
-        ipt[self.field_oi] = res
-        ipt['resample_meta_data'] = res_data
         return ipt
 
 class Resample_Image_shape(_TensorProcessing):
@@ -181,97 +81,11 @@ class Resample_Image_shape(_TensorProcessing):
         ipt['resize_meta_data'] = res_data
         return ipt
 
-class Resample_nii_shape(_TensorProcessing):
-    def __init__(self, mode = sitk.sitkLinear, shape = [64,64,64],
-                 ignore_direction=True, field_oi='X',
-                 output_dtype=sitk.sitkFloat32):
-        super(Resample_nii_shape, self).__init__()
-        self.resampler = sitk.ResampleImageFilter()
-        self.field_oi= field_oi
-        self.shape = shape
-        self.mode = mode
-        self.ignore_direction = ignore_direction
-        self.output_dtype = output_dtype
-        # desired SITK Image direction : (-0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0,
-        # -1.0, 0.0)
-    def get_reciprical(self, **kwargs):
-        return Reverse_Resample_nii(**kwargs)
-
-    def resample_function(self, image, meta_data=None):
-        if not meta_data:
-            orig_size = np.array(image.GetSize(), dtype=np.int)
-            orig_spacing = image.GetSpacing()
-            new_size = np.array([sz if sz is not None
-                                 else orig_size[i]
-                                 for i, sz in enumerate(self.shape)],dtype=int)
-            new_spacing = orig_spacing*(orig_size/new_size)
-            new_size = [int(sz) for sz in new_size]
-
-            meta_data = {'orig_size': list(orig_size),
-                         'orig_spc': list(orig_spacing),
-                         'orig_dir': image.GetDirection(),
-                         'orig_org': image.GetOrigin(),
-                         'new_size': list(new_size),
-                         'new_spc': list(new_spacing)}
-
-
-        self.resampler.SetInterpolator(self.mode)
-        self.resampler.SetOutputOrigin(meta_data['orig_org'])
-        self.resampler.SetOutputDirection(meta_data['orig_dir'])
-        self.resampler.SetSize(meta_data['new_size'])
-        self.resampler.SetOutputSpacing(meta_data['new_spc'])
-
-        return self.resampler.Execute(sitk.Cast(image, self.output_dtype)), \
-               meta_data
-
-    def __call__(self, ipt):
-        res = []
-        if all([sp is None for sp in self.shape]):
-            return ipt
-        if 'resample_meta_data' in ipt.keys():
-            res_data = ipt['resample_meta_data']
-        else:
-            res_data = None
-        for img in ipt[self.field_oi]:
-            if img.GetDirection() != \
-                    (-0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0)  and \
-                    not self.ignore_direction:
-                raise Exception("Image Direction doesn't match. Edits need to be "
-                                "done or implemeneted")
-
-            res_img, res_data = self.resample_function(img, res_data)
-            res.append(res_img)
-        ipt[self.field_oi] = res
-        ipt['resample_meta_data'] = res_data
-        return ipt
-
-class Reverse_Resample_nii(_TensorProcessing):
-    def __init__(self, mode = sitk.sitkLinear, field_oi='pred_y'):
-        super(Reverse_Resample_nii, self).__init__()
-        self.field_oi = field_oi
-        self.resampler = sitk.ResampleImageFilter()
-        self.mode = mode
-
-    def __call__(self, ipt):
-        original = deepcopy(ipt)
-        meta_data = ipt['resample_meta_data']
-        self.resampler.SetInterpolator(self.mode)
-        self.resampler.SetSize([int(x) for x in meta_data['orig_size']])
-        self.resampler.SetOutputSpacing(meta_data['orig_spc'])
-        self.resampler.SetOutputOrigin(meta_data['orig_org'])
-        self.resampler.SetOutputDirection(meta_data['orig_dir'])
-        img_res = []
-        for img in ipt[self.field_oi]:
-            img = self.resampler.Execute(img)
-            img_res.append(sitk.Cast(img, sitk.sitkUInt8))
-        ipt[self.field_oi] = img_res
-
-        return ipt
-
 class Reverse_Resample_Image(_TensorProcessing):
-    def __init__(self, mode = sitk.sitkLinear, field_oi='pred_y'):
+    def __init__(self, mode , field_oi='pred_y'):
         super(Reverse_Resample_Image, self).__init__()
         raise NotImplementedError
+        # This is the copy from SITK
         # self.field_oi = field_oi
         # self.resampler = sitk.ResampleImageFilter()
         # self.mode = mode
@@ -291,18 +105,6 @@ class Reverse_Resample_Image(_TensorProcessing):
     #     ipt[self.field_oi] = img_res
     #
     #     return ipt
-
-class Cast_nii(_TensorProcessing):
-    def __init__(self, data_type=sitk.sitkFloat32, field_oi='X'):
-        super(Cast_nii, self).__init__()
-        self.output_dtype = data_type
-        self.field_oi = field_oi
-
-    def __call__(self, ipt):
-
-        ipt[self.field_oi] = [sitk.Cast(img,
-                                        self.output_dtype) for img in ipt[self.field_oi]]
-        return ipt
 
 class Cast_numpy(_TensorProcessing):
     def __init__(self, data_type=np.float16, field_oi='X'):
@@ -343,33 +145,13 @@ class ToNumpy(_TensorProcessing):
         ipt[self.field_oi] = np.asarray(ipt[self.field_oi], dtype=self.dtype )
         return ipt
 
-def get_all_image_data(image):
-    return {'orig_size': image.GetSize(),
-            'orig_spc': image.GetSpacing(),
-            'orig_dir': image.GetDirection(),
-            'orig_org': image.GetOrigin()}
-
-class SITKToNumpy(_TensorProcessing):
-    def __init__(self, field_oi='X'):
-        super(SITKToNumpy, self).__init__()
-        self.field_oi = field_oi
-
-    def get_reciprical(self, **kwargs):
-        return NumpyToSITK(**kwargs)
-
-    def __call__(self, ipt):
-        ipt[self.field_oi + '_SITKToNumpy_data'] = [get_all_image_data(img)
-                                                    for img in ipt[self.field_oi]]
-        ipt[self.field_oi] = [sitk.GetArrayFromImage(img) for img in ipt[self.field_oi]]
-        return ipt
-
 class ImageToNumpy(_TensorProcessing):
     def __init__(self, field_oi='X'):
         super(ImageToNumpy, self).__init__()
         self.field_oi = field_oi
 
     def get_reciprical(self, **kwargs):
-        return NumpyToSITK(**kwargs)
+        return NumpyToImage(**kwargs)
 
     def __call__(self, ipt):
         ipt[self.field_oi] = [np.array(img) for img in ipt[self.field_oi]]
@@ -388,37 +170,6 @@ class NumpyToImage(_TensorProcessing):
         ipt[self.field_oi] = [Image.fromarray(img, mode=self.mode) for img in
                               ipt[
             self.field_oi]]
-        return ipt
-
-def set_all_image_data(image, data):
-    image.SetOrigin(data['orig_org'])
-    image.SetSpacing(data['orig_spc'])
-    image.SetDirection(data['orig_dir'])
-    return image
-
-class NumpyToSITK(_TensorProcessing):
-    def __init__(self, field_oi='X'):
-        super(NumpyToSITK, self).__init__()
-        self.field_oi = field_oi
-
-    def get_reciprical(self, **kwargs):
-        return SITKToNumpy(**kwargs)
-
-    def __call__(self, ipt):
-
-        ipt[self.field_oi] = [sitk.GetImageFromArray(img) for img in ipt[self.field_oi]]
-        if self.field_oi + '_SITKToNumpy_data' in ipt.keys():
-            ipt[self.field_oi] = [
-                set_all_image_data(img, data)
-                for img, data in zip(ipt[self.field_oi],
-                                     ipt[self.field_oi + '_SITKToNumpy_data'])
-            ]
-        elif self.field_oi=='pred_y':
-            ipt[self.field_oi] = [
-                set_all_image_data(img, data)
-                for img, data in zip(ipt[self.field_oi],
-                                     ipt['X_SITKToNumpy_data'])
-            ]
         return ipt
 
 class Numpy_resize(_TensorProcessing):
@@ -612,22 +363,4 @@ class OneHotEncode(_TensorProcessing):
 
         ipt[self.field_oi] = new_y
 
-        return ipt
-
-class OneHotEncode_seg(_TensorProcessing):
-    def __init__(self, max_class, field_oi='y'):
-        super(OneHotEncode_seg, self).__init__()
-        self.max_class = max_class
-        self.field_oi = field_oi
-
-    def __call__(self, ipt):
-        assert ipt[self.field_oi].shape[0]==1
-
-        def one_hotEncode(im):
-            one_hot = np.zeros((self.max_class, *im.shape))
-            for i, unique_value in enumerate(np.unique(im)):
-                one_hot[i,...][im == unique_value] = 1
-            return one_hot
-        if self.max_class>1:
-            ipt[self.field_oi] = one_hotEncode(ipt[self.field_oi][0])
         return ipt
