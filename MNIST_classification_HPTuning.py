@@ -1,3 +1,15 @@
+'''
+Copyright (c) 2023, Martel Lab, Sunnybrook Research Institute
+
+Description: Example code of how to use the project_team to train a model on
+classification. This example is performed on the MNIST dataset. This will
+perform a Hyperparameter Tuning experiment
+
+Input: a working_dir (working directory) to perform the experiment in
+Output: in the working directory the datasets used will be saved as csv
+files, The experimental results csv, and all gridpoint models.
+'''
+
 import argparse
 
 import pandas as pd

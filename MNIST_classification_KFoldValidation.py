@@ -1,3 +1,16 @@
+'''
+Copyright (c) 2023, Martel Lab, Sunnybrook Research Institute
+
+Description: Example code of how to use the project_team to train a model on
+classification. This example is performed on the MNIST dataset. This will
+perform a KFold Validation experiment
+
+Input: a working_dir (working directory) to perform the experiment in
+Output: in the working directory each individual fold model will be saved in
+it's own folder, and a Kfold results csv.
+'''
+
+
 import argparse
 
 import pandas as pd

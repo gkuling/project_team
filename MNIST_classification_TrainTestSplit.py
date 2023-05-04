@@ -1,3 +1,17 @@
+'''
+Copyright (c) 2023, Martel Lab, Sunnybrook Research Institute
+
+Description: Example code of how to use the project_team to train a model on
+classification. This example is performed on the MNIST dataset. This will
+perform a TRain-Test Split experiment
+
+Input: a working_dir (working directory) to perform the experiment in
+Output: in the working directory there will be configs for the manager,
+processor, practitioner, and model. Checkpoint saves will be intheir own
+folder. Datsets will be saved in individual csv files. Final model weights as a
+pth file.
+'''
+
 import argparse
 
 import pandas as pd
@@ -14,12 +28,6 @@ parser.add_argument('--working_dir',type=str,
                     default='/amartel_data/Grey/pro_team_examples',
                     help='The current directory to save models, and configs '
                          'of the experiment')
-parser.add_argument('--batch-size', type=int, default=64, metavar='N',
-                    help='input batch size for training (default: 64)')
-parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-                    help='input batch size for testing (default: 1000)')
-parser.add_argument('--epochs', type=int, default=1, metavar='N',
-                    help='number of epochs to train (default: 14)')
 opt = parser.parse_args()
 
 # Prepare data if not already saved and set up
@@ -82,7 +90,6 @@ processor = proteam.dt_project.Image_Processor(
     image_processor_config=dt_project_cnfg
 )
 
-# Prepare model
 # Prepare model
 mdl = proteam.models.MNIST_CNN(
     proteam.models.MNIST_CNN_config(**mdl_args)
