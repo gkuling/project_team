@@ -115,18 +115,18 @@ class _Kfold(_Statistical_Project):
             data_file[self.config.group_data_by].isin(train_list)
 
         ]
-        tr_data_df.to_csv(self.root +'/train_set.csv', index=False)
+        tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
 
         ts_data_df = data_file[
             data_file[self.config.group_data_by].isin(test_list)
         ]
-        ts_data_df.to_csv(self.root +'/inf_set.csv', index=False)
+        ts_data_df.to_csv(self.root +'/if_dset.csv', index=False)
 
         if val_list:
             vl_data_df = data_file[
                 data_file[self.config.group_data_by].isin(val_list)
             ]
-            vl_data_df.to_csv(self.root + '/val_set.csv', index=False)
+            vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
 
     def finished_kfold_validation(self):
         self.root = self.original_root

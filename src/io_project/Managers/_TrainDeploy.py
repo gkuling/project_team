@@ -37,9 +37,9 @@ class _TrainDeploy(_Statistical_Project):
             vl_data_df = self.remap_X(vl_data_df)
             vl_data_df = self.remap_y(vl_data_df)
 
-            vl_data_df.to_csv(self.root + '/val_set.csv', index=False)
+            vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
             tr_data_df = data_file
-            tr_data_df.to_csv(self.root + '/train_set.csv', index=False)
+            tr_data_df.to_csv(self.root + '/tr_dset.csv', index=False)
         else:
 
             if self.config.stratify_by:
@@ -63,24 +63,24 @@ class _TrainDeploy(_Statistical_Project):
             tr_data_df = data_file[
                 data_file[self.config.group_data_by].isin(train_list)
             ]
-            tr_data_df.to_csv(self.root +'/train_set.csv', index=False)
+            tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
             if val_list:
                 vl_data_df = data_file[
                     data_file[self.config.group_data_by].isin(val_list)
                 ]
-                vl_data_df.to_csv(self.root + '/val_set.csv', index=False)
+                vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
             if test_list:
                 ts_data_df = data_file[
                     data_file[self.config.group_data_by].isin(test_list)
                 ]
-                ts_data_df.to_csv(self.root + '/inf_set.csv', index=False)
+                ts_data_df.to_csv(self.root + '/if_dset.csv', index=False)
 
     def prepare_for_inference(self, data_file=None):
         ### Case for running inference:
         # 1. test_size>0.0 => this would be done when prepare_for_experiment
         # is ran
         if self.config.test_size>0.0 and os.path.exists(self.root +
-                                                        '/inf_set.csv'):
+                                                        '/if_dset.csv'):
             pass
         else:
             # 2. data_file given to the manager.
@@ -122,7 +122,7 @@ class _TrainDeploy(_Statistical_Project):
                           'contain y labels. It cannot be used for performance '
                           'evaluation.')
 
-            data_set.to_csv(self.root + '/inf_set.csv', index=False)
+            data_set.to_csv(self.root + '/if_dset.csv', index=False)
         print('IO Message: Inference data is set up. ')
 
     def finished_inf_validation(self, results_df):

@@ -15,3 +15,4 @@ class _TensorProcessing(object):
 from .img_intensity import *
 from .img_shape import *
 from .img_intensity import *
+from .nlp import *

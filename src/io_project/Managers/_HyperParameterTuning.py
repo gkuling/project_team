@@ -92,17 +92,17 @@ class _HyperParameterTuning(_Statistical_Project):
         tr_data_df = data_file[
             data_file[self.config.group_data_by].isin(train_list)
         ]
-        tr_data_df.to_csv(self.root +'/train_set.csv', index=False)
+        tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
         if val_list:
             vl_data_df = data_file[
                 data_file[self.config.group_data_by].isin(val_list)
             ]
-            vl_data_df.to_csv(self.root + '/val_set.csv', index=False)
+            vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
         if test_list:
             inf_set_df = data_file[
                 data_file[self.config.group_data_by].isin(test_list)
             ]
-            inf_set_df.to_csv(self.root + '/inf_set.csv', index=False)
+            inf_set_df.to_csv(self.root + '/if_dset.csv', index=False)
 
     def prepare_for_experiment(self,
                                parameter_domains
