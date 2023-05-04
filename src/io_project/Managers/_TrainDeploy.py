@@ -5,17 +5,36 @@ import numpy as np
 from ._Statistical_Project import _Statistical_Project
 
 class io_traindeploy_config(io_config):
+    '''
+    Configuration for a train test split experiment
+    '''
     def __init__(self, **kwargs):
         super(io_traindeploy_config, self).__init__(**kwargs)
 
 class _TrainDeploy(_Statistical_Project):
+    '''
+    Train Deployment Statistical Project
+    Functionality:
+    - straight train: test_size must be 0, and validation size must be zero
+    - train test: have a portion of test data
+    - train validation and test: have a portion of testing data and validation data
+    - train validation: have a portion of validation but not test
+    '''
     def __init__(self, io_config_input=io_traindeploy_config()):
         super(_TrainDeploy, self).__init__(io_config_input)
         assert type(io_config_input)==io_traindeploy_config
 
     def prepare_for_experiment(self):
+        '''
+        Preliminary organization tasks before training begins.
+        1. Load data sets
+        2. Rename columns for X and y so they are consistent in downstream tasks
+        3. save the data used in the experiment folder for records
+        '''
         print('IO Message: Setting up data for training')
         self.config.save_pretrained(self.root)
+
+        # load the dataframe
         if type(self.config.data_csv_location)==pd.DataFrame:
             data_file = self.config.data_csv_location
         elif os.path.exists(self.config.data_csv_location):
@@ -24,14 +43,17 @@ class _TrainDeploy(_Statistical_Project):
             raise Exception('The data_csv_location given is not a pandas '
                             'dataframe or a file that exists. ')
 
+        # designate X and y
         data_file = self.remap_X(data_file)
         data_file = self.remap_y(data_file)
 
+        # determine how to group data by and fine the grouped data examples
         data_file, session_list = self.get_session_list(data_file)
 
         ### COME BACK FOR THIS SECTION
         if self.config.val_data_csv_location and \
                 os.path.exists(self.config.val_data_csv_location):
+            # process validation dataset if a dataframe is given
             vl_data_df = pd.read_csv(self.config.val_data_csv_location)
 
             vl_data_df = self.remap_X(vl_data_df)
@@ -41,8 +63,9 @@ class _TrainDeploy(_Statistical_Project):
             tr_data_df = data_file
             tr_data_df.to_csv(self.root + '/tr_dset.csv', index=False)
         else:
-
+            # split and process the data given the proportions
             if self.config.stratify_by:
+                # split the data with a stratification characteristic
                 try:
                     strat = self.stratify_data(data_file, session_list)
                 except Exception as e:
@@ -57,18 +80,25 @@ class _TrainDeploy(_Statistical_Project):
                 train_list, val_list, test_list = self.stratified_data_split(
                     session_list, strat)
             else:
+                # split the data with out a stratification characteristic
                 train_list, val_list, test_list = self.data_split(
                     session_list)
-
+            # group data together and save the datasets in the experiment
+            # folder
+            # training
             tr_data_df = data_file[
                 data_file[self.config.group_data_by].isin(train_list)
             ]
             tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
+
+            # validation
             if val_list:
                 vl_data_df = data_file[
                     data_file[self.config.group_data_by].isin(val_list)
                 ]
                 vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
+
+            # inference
             if test_list:
                 ts_data_df = data_file[
                     data_file[self.config.group_data_by].isin(test_list)
@@ -76,6 +106,11 @@ class _TrainDeploy(_Statistical_Project):
                 ts_data_df.to_csv(self.root + '/if_dset.csv', index=False)
 
     def prepare_for_inference(self, data_file=None):
+        '''
+        Preliminary organization tasks to perform before running inference on data
+        :param data_file: optional. default: None. Can be a csv location or a pandas dataframe
+        :return:
+        '''
         ### Case for running inference:
         # 1. test_size>0.0 => this would be done when prepare_for_experiment
         # is ran
@@ -109,9 +144,9 @@ class _TrainDeploy(_Statistical_Project):
                                 "config 'inf_data_csv_location' must not be None, "
                                 "or the config 'test_size' must be >0.0")
 
-
-
+            # required to rename X becausewe are running inference
             data_set = self.remap_X(data_set)
+            # throw warning if y can not be remapped because we may not know y for the set
 
             try:
                 data_set = self.remap_y(data_set)
@@ -125,36 +160,38 @@ class _TrainDeploy(_Statistical_Project):
             data_set.to_csv(self.root + '/if_dset.csv', index=False)
         print('IO Message: Inference data is set up. ')
 
-    def finished_inf_validation(self, results_df):
-        summary = {nm:[] for nm in results_df.columns}
-        if len(np.unique(results_df['seg_map'].to_list()).tolist())>1:
-            raise NotImplementedError('Having an output of more than one '
-                                      'segmentation map is not implemented. '
-                                      'Changes to this class must be made. ')
-        summary['Subject'].extend(['Average', 'Std.Dev.'])
-        summary['seg_map'].extend(
-            [np.unique(results_df['seg_map'].to_list()).tolist()
-             for _ in range(2)]
-        )
-
-        for key in summary.keys():
-            if key!='Subject' and key!='seg_map':
-                try:
-                    met_values = np.array(
-                        results_df[key].apply(
-                            lambda x: eval(x) if type(x)==str
-                            else x).to_list()
-                    )
-                    summary[key].append(met_values.mean(axis=0))
-                    summary[key].append(met_values.std(axis=0))
-                except:
-                    summary[key].extend(['',''])
-
-        summary = pd.DataFrame(summary)
-
-        output_results = pd.concat(
-            [results_df, summary],
-            ignore_index=True
-        )
-        output_results.to_csv(self.root + '/Full_TrainTest_TestResults.csv',
-                              index=False)
+    ### CONSIDER DELETING BELOW AS IT WAS USED FOR A SEGENTATION KFOLD EXPERIMENT.
+    ### I DO NOT BELIEVE IT IS PRACTICAL FOR PROJECT TEAM AND THIS PROJECT
+    # def finished_inf_validation(self, results_df):
+    #     summary = {nm:[] for nm in results_df.columns}
+    #     if len(np.unique(results_df['seg_map'].to_list()).tolist())>1:
+    #         raise NotImplementedError('Having an output of more than one '
+    #                                   'segmentation map is not implemented. '
+    #                                   'Changes to this class must be made. ')
+    #     summary['Subject'].extend(['Average', 'Std.Dev.'])
+    #     summary['seg_map'].extend(
+    #         [np.unique(results_df['seg_map'].to_list()).tolist()
+    #          for _ in range(2)]
+    #     )
+    #
+    #     for key in summary.keys():
+    #         if key!='Subject' and key!='seg_map':
+    #             try:
+    #                 met_values = np.array(
+    #                     results_df[key].apply(
+    #                         lambda x: eval(x) if type(x)==str
+    #                         else x).to_list()
+    #                 )
+    #                 summary[key].append(met_values.mean(axis=0))
+    #                 summary[key].append(met_values.std(axis=0))
+    #             except:
+    #                 summary[key].extend(['',''])
+    #
+    #     summary = pd.DataFrame(summary)
+    #
+    #     output_results = pd.concat(
+    #         [results_df, summary],
+    #         ignore_index=True
+    #     )
+    #     output_results.to_csv(self.root + '/Full_TrainTest_TestResults.csv',
+    #                           index=False)

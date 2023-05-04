@@ -4,8 +4,18 @@ from src.io_project.IO_config import io_config
 from sklearn.model_selection import train_test_split
 
 class _Statistical_Project():
+    '''
+    Parent class of a statistical project.
+    Used to collect shared function used by the following types of projects:
+    - train (val) test split/ deployment
+    - k fold validation
+    - hyper parameter grid seraching
+    '''
     def __init__(self,
                  config):
+        '''
+        :param config: an io_config
+        '''
         self.config = config
 
         self.config = config
@@ -14,11 +24,22 @@ class _Statistical_Project():
             os.makedirs(self.root)
 
     def set_root(self, lcl):
+        '''
+        change the root directory of the experiment
+        :param lcl: directory where to save the experiment
+        :return:
+        '''
         self.root = lcl
         if not os.path.exists(self.root):
             os.makedirs(self.root)
 
     def remap_X(self, df):
+        '''
+        the function will change the column name of the X variable in the dataframe to 'X' so it is generic and can be
+        used consistently in project team members
+        :param df: dataframe you wish to change the X column to 'X'
+        :return:
+        '''
         mapper = {}
         if type(self.config.X)==list:
             try:
@@ -38,6 +59,12 @@ class _Statistical_Project():
         return df
 
     def remap_y(self, df):
+        '''
+        the function will change the column name of the y variable in the dataframe to 'y' so it is generic and can be
+        used consistently in project team members
+        :param df: dataframe you wish to change the X column to 'y'
+        :return:
+        '''
         mapper = {}
         if type(self.config.y)==list:
             df['y'] = df[self.config.y].values.tolist()
@@ -50,6 +77,12 @@ class _Statistical_Project():
         return df
 
     def stratified_data_split(self, list_examples, stratification):
+        '''
+        stratified split of data for training, val, and test, given the portions that are declared in the config.
+        :param list_examples: list of example labels from the 'group_data_by' config setting
+        :param stratification: a list of coresponding values that stratification is based on
+        :return: train_list, val_list, and test_list of the group_data_by characteristic
+        '''
         val_list = None
         test_list = None
         if self.config.test_size>0.0:
@@ -73,6 +106,11 @@ class _Statistical_Project():
         return train_list, val_list, test_list
 
     def data_split(self, list_examples):
+        '''
+        split of data for training, val, and test, given the portions that are declared in the config.
+        :param list_examples: list of example labels from the 'group_data_by' config setting
+        :return: train_list, val_list, and test_list of the group_data_by characteristic
+        '''
         val_list = None
         test_list = None
         if self.config.test_size>0.0:
@@ -92,6 +130,13 @@ class _Statistical_Project():
         return train_list, val_list, test_list
 
     def get_session_list(self, data):
+        '''
+        the function will find the individual items that are grouped in the
+        data given
+        :param data: dataset
+        :return: data, and a list of individual unique identifiers based on
+        group_data_by
+        '''
         if self.config.group_data_by in data.columns:
             pass
         else:
@@ -102,6 +147,14 @@ class _Statistical_Project():
         ))
 
     def stratify_data(self, data, sessions):
+        '''
+        the function will determine the stratification quality the data has
+        given the sessions and stratify_by
+        :param data: dataset
+        :param sessions: list of individual unqiue identifiers based on
+        group_data_by
+        :return: a list of the stratification quality based on stratify_by
+        '''
         tmp_strtfy_by = self.config.stratify_by
         if tmp_strtfy_by == self.config.y:
             tmp_strtfy_by = 'y'

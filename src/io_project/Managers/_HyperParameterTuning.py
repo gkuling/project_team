@@ -10,24 +10,41 @@ from datetime import datetime as dt_tool
 from ._Statistical_Project import _Statistical_Project
 
 class io_hptuning_config(io_config):
+    '''
+    Configuration for a hyperparameter tuning experiment
+    '''
     def __init__(self, data_csv_location, technique, training_portion,
-                 criterion= 'ACC',
-                 penultimate=None,
-                 iterations=None,
+                 criterion= 'ACC', iterations=1,
                  **kwargs):
+        '''
+        :param data_csv_location: data set dsv file or dataframe containing
+        the data
+        :param technique: technique for performing HPTuning, currently only
+        have GridSearch and RandomSearch
+        :param training_portion: the portion of the input data to use for the
+        search. Highly recommend a small portion to lower computation time
+        :param criterion: The criteria that you use to determine success
+        :param iterations: for the RandomSearch you decide how many
+        parameters to search over
+        :param kwargs:
+        '''
         super(io_hptuning_config, self).__init__(data_csv_location, **kwargs)
         technique_possibilities = [
             'GridSearch', 'RandomSearch'
         ]
         assert technique in technique_possibilities, "Tuning Technique must be in " + str(technique_possibilities)
-        self.iteration=0
+        self.iteration = 0
         self.technique = technique
         self.training_portion = training_portion
         self.criterion = criterion
-        self.penultimate = penultimate
         self.iterations = iterations
 
 class _HyperParameterTuning(_Statistical_Project):
+    '''
+    HP Tuning Statistical Project
+    Functionality:
+    - search hyperparamters to find the best model
+    '''
     def __init__(self, io_config_input):
         super(_HyperParameterTuning, self).__init__(io_config_input)
         assert type(io_config_input)==io_hptuning_config
@@ -40,14 +57,32 @@ class _HyperParameterTuning(_Statistical_Project):
         self.timer = dt_tool.now()
 
     def prepare_data_for_experiment(self):
-        data_file = pd.read_csv(self.config.data_csv_location)
+        '''
+        Preliminary organization tasks before training begins.
+        1. Load data sets
+        2. Rename columns for X and y so they are consistent in downstream tasks
+        3. save the data used in the experiment folder for records
+        '''
+        # load the dataframe
+        if type(self.config.data_csv_location) == pd.DataFrame:
+            data_file = self.config.data_csv_location
+        elif os.path.exists(self.config.data_csv_location):
+            data_file = pd.read_csv(self.config.data_csv_location)
+        else:
+            raise Exception('The data_csv_location given is not a pandas '
+                            'dataframe or a file that exists. ')
+
+        # designate X and y
         data_file = self.remap_X(data_file)
         data_file = self.remap_y(data_file)
 
+        # determine how to group data by and fine the grouped data examples
         data_file, session_list = self.get_session_list(data_file)
 
         if self.config.stratify_by:
+            # split the data with a stratification characteristic
             if self.config.training_portion<1.0:
+                # if training with less than the full dataset
                 try:
                     strat = self.stratify_data(data_file, session_list)
                 except Exception as e:
@@ -59,12 +94,14 @@ class _HyperParameterTuning(_Statistical_Project):
                                          'IndexError. ')
                     else:
                         raise e
+                # take the portion desired
                 _, session_list = train_test_split(
                     session_list,
                     stratify=strat,
                     test_size=self.config.training_portion,
                     random_state=self.config.r_seed
                 )
+            # split the data with a stratification characteristic
             try:
                 strat = self.stratify_data(data_file, session_list)
             except Exception as e:
@@ -81,23 +118,31 @@ class _HyperParameterTuning(_Statistical_Project):
             )
         else:
             if self.config.training_portion<1.0:
+                # if training with less than the full dataset
                 _, session_list = train_test_split(
                     session_list,
                     test_size=self.config.training_portion,
                     random_state=self.config.r_seed
                 )
+            # split the data with out a stratification characteristic
             train_list, val_list, test_list = self.data_split(
                 session_list)
-
+        # group data together and save the datasets in the experiment
+        # folder
+        # training
         tr_data_df = data_file[
             data_file[self.config.group_data_by].isin(train_list)
         ]
         tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
+
+        # validation
         if val_list:
             vl_data_df = data_file[
                 data_file[self.config.group_data_by].isin(val_list)
             ]
             vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
+
+        # inference
         if test_list:
             inf_set_df = data_file[
                 data_file[self.config.group_data_by].isin(test_list)
@@ -107,10 +152,18 @@ class _HyperParameterTuning(_Statistical_Project):
     def prepare_for_experiment(self,
                                parameter_domains
                                ):
+        '''
+        Preliminary organization tasks before training begins.
+        :param parameter_domains: distionary containing the parameters to be
+        tuned as keys and their domains as values
+        '''
         print('IO Message: Setting up data for hyper-parameter tuning')
+        # save self before beginning
         self.config.save_pretrained(self.root)
+        # organize the data to be used in the HP tuning
         self.prepare_data_for_experiment()
 
+        # organize the hyperparameters that will be searched over
         allNames = sorted(parameter_domains)
         combinations = it.product(*(parameter_domains[Name] for Name in allNames))
         self.parameter_configurations =[dict(tuple(zip(allNames, f))) for f
@@ -119,9 +172,13 @@ class _HyperParameterTuning(_Statistical_Project):
         print('IO Message: Ready for experiment. There are ' + str(len(
             self.parameter_configurations)) + ' parameter configurations to '
                                               'be explored. ')
+
+        # change paramter combinations based on the search technique
         if self.config.technique=='Gridsearch':
+            # use all combos
             pass
         elif self.config.technique=='RandomSearch':
+            # use only a limited amount of randomly chosen paramters
             np.random.shuffle(
                 self.parameter_configurations
             )
@@ -130,6 +187,10 @@ class _HyperParameterTuning(_Statistical_Project):
 
 
     def get_gridpoint_args(self):
+        '''
+        get the next grid point to be evaluated
+        :return:
+        '''
         gridpoint_args = self.parameter_configurations[self.config.iteration]
         self.config.iteration += 1
 
