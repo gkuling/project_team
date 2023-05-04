@@ -3,6 +3,10 @@ from . import _TensorProcessing
 import numpy as np
 
 class AffineAugmentation(_TensorProcessing):
+    '''
+    perform affine augmentation currently only for 3d images. could be
+    adapted to run on 2d later.
+    '''
     def __init__(self, shift=1, rot=1, scale=0.1, dimensionality=3, field_oi='X',
                  order=0, distribution_type='Gaussian'):
         super(AffineAugmentation, self).__init__()
@@ -74,6 +78,9 @@ class AffineAugmentation(_TensorProcessing):
         return ipt
 
 class Translate_3DNumpy(_TensorProcessing):
+    '''
+    perform translation on a 3d numpy array
+    '''
     def __init__(self, shifts=(0,0,0), order=0, field_oi='X'):
         super(Translate_3DNumpy, self).__init__()
         self.shifts = shifts
@@ -91,6 +98,9 @@ class Translate_3DNumpy(_TensorProcessing):
         return ipt
 
 class Rotate_3DNumpy(_TensorProcessing):
+    '''
+    perform rotation on a 3d numpy array
+    '''
     def __init__(self, angles=(0,0,0), order=0, field_oi='X'):
         super(Rotate_3DNumpy, self).__init__()
         self.angles = angles
@@ -115,6 +125,9 @@ class Rotate_3DNumpy(_TensorProcessing):
         return ipt
 
 class Scale_3DNumpy(_TensorProcessing):
+    '''
+    perform scaling on a 3d numpy array
+    '''
     def __init__(self, scale=1, field_oi='X', order=0):
         super(Scale_3DNumpy, self).__init__()
         self.scale = scale
@@ -172,6 +185,9 @@ class Scale_3DNumpy(_TensorProcessing):
         return ipt
 
 class AddGaussainNoise(_TensorProcessing):
+    '''
+    add gaussian noise to the numpy array
+    '''
     def __init__(self, std=1, field_oi='X'):
         super(AddGaussainNoise, self).__init__()
         self.std = std

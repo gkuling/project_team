@@ -1,7 +1,11 @@
 from . import _TensorProcessing
 import transformers as tk
 from copy import deepcopy
+
 class HG_Tokenizer(_TensorProcessing):
+    '''
+    tokenize the string using a tokenizer built by the hugging face library
+    '''
     def __init__(self, tokenizer, model=None, field_oi='X', truncation=True,
                  max_length=512):
         super(HG_Tokenizer, self).__init__()

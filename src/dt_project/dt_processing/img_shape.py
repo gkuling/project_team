@@ -9,6 +9,9 @@ from . import _TensorProcessing
 from copy import deepcopy
 
 class OpenImage_file(_TensorProcessing):
+    '''
+    Open a PIL Image file
+    '''
     def __init__(self, field_oi='X'):
         super(OpenImage_file, self).__init__()
         self.field_oi = field_oi
@@ -38,6 +41,9 @@ class OpenImage_file(_TensorProcessing):
         return ipt
 
 class Resample_Image_shape(_TensorProcessing):
+    '''
+    Resample a PIL Image based on the dimension of the image
+    '''
     def __init__(self, mode = Image.BILINEAR, new_size = (32, 32), field_oi='X',
                  output_dtype=np.uint8):
         super(Resample_Image_shape, self).__init__()
@@ -107,6 +113,9 @@ class Reverse_Resample_Image(_TensorProcessing):
     #     return ipt
 
 class Cast_numpy(_TensorProcessing):
+    '''
+    cast a numpy array with a specific data type
+    '''
     def __init__(self, data_type=np.float16, field_oi='X'):
         super(Cast_numpy, self).__init__()
         self.output_dtype = data_type
@@ -135,6 +144,9 @@ class Cast_numpy(_TensorProcessing):
         return ipt
 
 class ToNumpy(_TensorProcessing):
+    '''
+    cast the input to a numpy array with a specific data type
+    '''
     def __init__(self, field_oi='X', dtype=np.float32):
         super(ToNumpy, self).__init__()
         self.field_oi = field_oi
@@ -142,10 +154,13 @@ class ToNumpy(_TensorProcessing):
 
     def __call__(self, ipt):
 
-        ipt[self.field_oi] = np.asarray(ipt[self.field_oi], dtype=self.dtype )
+        ipt[self.field_oi] = np.asarray(ipt[self.field_oi], dtype=self.dtype)
         return ipt
 
 class ImageToNumpy(_TensorProcessing):
+    '''
+    convert a PIL Image to a numpy array
+    '''
     def __init__(self, field_oi='X'):
         super(ImageToNumpy, self).__init__()
         self.field_oi = field_oi
@@ -158,6 +173,9 @@ class ImageToNumpy(_TensorProcessing):
         return ipt
 
 class NumpyToImage(_TensorProcessing):
+    '''
+    convert a numpy array to a PIL image
+    '''
     def __init__(self, field_oi='X', mode=None):
         super(NumpyToImage, self).__init__()
         self.field_oi = field_oi
@@ -173,6 +191,9 @@ class NumpyToImage(_TensorProcessing):
         return ipt
 
 class Numpy_resize(_TensorProcessing):
+    '''
+    resample a numpy array to a new size using skimage resize and an order of 0
+    '''
     def __init__(self, output_shape, field_oi='X'):
         super(Numpy_resize, self).__init__()
         self.output_shape = output_shape
@@ -191,14 +212,18 @@ class Numpy_resize(_TensorProcessing):
         return ipt
 
 class Pad_to_Size_numpy(_TensorProcessing):
+    '''
+    pad a numpy array to a given size by a given value
+    '''
     def __init__(self, shape = (128, 256, 256), img_centering=(None,None,None),
-                 centre=None,
+                 centre=None, fill_value=0.0,
                  field_oi='X'):
         super(Pad_to_Size_numpy, self).__init__()
         self.field_oi = field_oi
         self.shape = shape
         self.img_centering = img_centering
         self.centre = centre
+        self.value = fill_value
 
     def get_reciprical(self, **kwargs):
         return Reverse_Pad_to_Size_numpy(**kwargs)
@@ -293,6 +318,9 @@ class Pad_to_Size_numpy(_TensorProcessing):
         return ipt
 
 class Reverse_Pad_to_Size_numpy(_TensorProcessing):
+    '''
+    reverse the padding to a specific numpy size
+    '''
     def __init__(self, field_oi='pred_y'):
         super(Reverse_Pad_to_Size_numpy, self).__init__()
         self.field_oi = field_oi
@@ -317,19 +345,23 @@ class Reverse_Pad_to_Size_numpy(_TensorProcessing):
         return ipt
 
 class Add_Channel(_TensorProcessing):
+    '''
+    convert given field into a full numpy array with the list len as the
+    channels
+    '''
     def __init__(self, compress_labels=False, field_oi='X'):
         super(Add_Channel, self).__init__()
         self.field_oi = field_oi
         self.compress_labels = compress_labels
 
     def __call__(self, ipt):
-
-
         ipt[self.field_oi] = np.asarray(ipt[self.field_oi])
-
         return ipt
 
 class ToTensor(_TensorProcessing):
+    '''
+    cast object to a pytorch Tensor
+    '''
     def __init__(self, dtype=torch.float32, field_oi='X'):
         super(ToTensor, self).__init__()
         self.field_oi = field_oi
@@ -347,6 +379,9 @@ class ToTensor(_TensorProcessing):
         return ipt
 
 class OneHotEncode(_TensorProcessing):
+    '''
+    one hot encode the given y label
+    '''
     def __init__(self,max_class, field_oi='y'):
         super(OneHotEncode, self).__init__()
         self.number_of_classes = max_class

@@ -3,6 +3,9 @@ import numpy as np
 from . import _TensorProcessing
 
 class MnStdNormalize_Numpy(_TensorProcessing):
+    '''
+    intensity normalization based on mean and standard deviation
+    '''
     def __init__(self, norm=[(0,1)], percentiles=(1,99), field_oi='X'):
         super(MnStdNormalize_Numpy, self).__init__()
         self.field_oi = field_oi
@@ -47,6 +50,9 @@ class MnStdNormalize_Numpy(_TensorProcessing):
         return ipt
 
 class MxMnNormalize_Numpy(_TensorProcessing):
+    '''
+    value normalization based on min max
+    '''
     def __init__(self, mxmn=[(0.,1.)], percentiles=[(1,99)], field_oi='X'):
         super(MxMnNormalize_Numpy, self).__init__()
         self.field_oi = field_oi
@@ -88,6 +94,9 @@ class MxMnNormalize_Numpy(_TensorProcessing):
         return ipt
 
 class Clip_Numpy(_TensorProcessing):
+    '''
+    clip a numpy values between a given min and max
+    '''
     def __init__(self, max=1.0, min=0.0, field_oi='X'):
         super(Clip_Numpy, self).__init__()
         self.max = max
@@ -104,6 +113,9 @@ class Clip_Numpy(_TensorProcessing):
         return ipt
 
 class Histogram_Equalization_Numpy(_TensorProcessing):
+    '''
+    perform histogram normalization on the given numpy array
+    '''
     def __init__(self, bins=1000, mask_mxmn=(0.1,0.99), field_oi='X'):
         super(Histogram_Equalization_Numpy, self).__init__()
         self.bins=bins
@@ -114,9 +126,6 @@ class Histogram_Equalization_Numpy(_TensorProcessing):
         ipt[self.field_oi] = [exposure.equalize_adapthist(np_ar,
                                                           nbins=self.bins,
                                                           clip_limit=0.03
-                                                          # mask=np.logical_and(
-                                                          #     np_ar>self.mask_mxmn[0],
-                                                          #     np_ar<self.mask_mxmn[1])
                                                           )
                               for np_ar in ipt[self.field_oi]]
         return ipt
