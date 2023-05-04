@@ -45,7 +45,6 @@ class Image_Processor(object):
             ))
         self.pre_transforms = transforms.Compose(pre_transforms)
 
-
     def set_pretransforms(self, pre_transforms_list):
         self.pre_transforms = transforms.Compose(pre_transforms_list)
 
@@ -63,16 +62,14 @@ class Image_Processor(object):
                                                                 'train_set.csv ')
             train_data_csv_location = pd.read_csv(train_data_csv_location
                                                   + '/train_set.csv')
-
-
-        if self.config.patch_based:
-            raise NotImplementedError()
-        else:
-            self.tr_dset = Images_Dataset(
-                train_data_csv_location,
-                preload_data=self.config.pre_load,
-                preload_transforms=self.pre_transforms
-            )
+        # GCK: This is the point that I pctured having a different dataset
+        # for slice based images (for radiology data) or pathc based dataset
+        # (for pathology and 2D data)
+        self.tr_dset = Images_Dataset(
+            train_data_csv_location,
+            preload_data=self.config.pre_load,
+            preload_transforms=self.pre_transforms
+        )
 
         if self.config.pre_load:
             self.tr_dset.perform_preload()
@@ -88,13 +85,12 @@ class Image_Processor(object):
                                                                      'val_set.csv ')
             validation_data_csv_location = pd.read_csv(validation_data_csv_location
                                                        + '/val_set.csv')
-        if self.config.patch_based:
-            raise NotImplementedError()
-        else:
-            self.vl_dset = Images_Dataset(
-                validation_data_csv_location,
-                preload_data=self.config.pre_load,
-                preload_transforms=self.pre_transforms)
+
+
+        self.vl_dset = Images_Dataset(
+            validation_data_csv_location,
+            preload_data=self.config.pre_load,
+            preload_transforms=self.pre_transforms)
         if self.config.pre_load:
             self.vl_dset.perform_preload()
 
