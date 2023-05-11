@@ -166,3 +166,26 @@ class _Statistical_Project():
             [getattr(data, self.config.group_data_by).eq(x).idxmax()
              for x in sessions]
         ][tmp_strtfy_by].to_list()
+
+    def load_rename_group_data(self):
+        '''
+        a function to load the data csv file, rename x and y and acquire the
+        amount of examples in the dataframe
+        :return: dt_fl: data_file, sssn_lst: session_list
+        '''
+        # load the dataframe
+        if type(self.config.data_csv_location) == pd.DataFrame:
+            dt_fl = self.config.data_csv_location
+        elif os.path.exists(self.config.data_csv_location):
+            dt_fl = pd.read_csv(self.config.data_csv_location)
+        else:
+            raise Exception('The data_csv_location given is not a pandas '
+                            'dataframe or a file that exists. ')
+
+        # designate X and y
+        dt_fl = self.remap_X(dt_fl)
+        data_file = self.remap_y(dt_fl)
+
+        # determine how to group data by and fine the grouped data examples
+        dt_fl, sssn_lst = self.get_session_list(dt_fl)
+        return dt_fl, sssn_lst

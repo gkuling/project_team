@@ -54,30 +54,18 @@ class _HyperParameterTuning(_Statistical_Project):
         if not os.path.exists(self.root):
             os.makedirs(self.root)
         self.original_root = self.root
-        self.timer = dt_tool.now()
+        self.timer = None
 
     def prepare_data_for_experiment(self):
         '''
         Preliminary organization tasks before training begins.
-        1. Load data sets
-        2. Rename columns for X and y so they are consistent in downstream tasks
-        3. save the data used in the experiment folder for records
+        1. Load data sets, rename columns for X and y so they are consistent
+            in downstream tasks
+        2. save the data used in the experiment folder for records
         '''
-        # load the dataframe
-        if type(self.config.data_csv_location) == pd.DataFrame:
-            data_file = self.config.data_csv_location
-        elif os.path.exists(self.config.data_csv_location):
-            data_file = pd.read_csv(self.config.data_csv_location)
-        else:
-            raise Exception('The data_csv_location given is not a pandas '
-                            'dataframe or a file that exists. ')
 
-        # designate X and y
-        data_file = self.remap_X(data_file)
-        data_file = self.remap_y(data_file)
-
-        # determine how to group data by and fine the grouped data examples
-        data_file, session_list = self.get_session_list(data_file)
+        # load dataset, rename data and group examples
+        data_file, session_list = self.load_rename_group_data()
 
         if self.config.stratify_by:
             # split the data with a stratification characteristic
@@ -133,21 +121,21 @@ class _HyperParameterTuning(_Statistical_Project):
         tr_data_df = data_file[
             data_file[self.config.group_data_by].isin(train_list)
         ]
-        tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
+        tr_data_df.to_csv(os.path.join(self.root, 'tr_dset.csv'), index=False)
 
         # validation
         if val_list:
             vl_data_df = data_file[
                 data_file[self.config.group_data_by].isin(val_list)
             ]
-            vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
+            vl_data_df.to_csv(os.path.join(self.root, 'vl_dset.csv'), index=False)
 
         # inference
         if test_list:
             inf_set_df = data_file[
                 data_file[self.config.group_data_by].isin(test_list)
             ]
-            inf_set_df.to_csv(self.root + '/if_dset.csv', index=False)
+            inf_set_df.to_csv(os.path.join(self.root, 'if_dset.csv'), index=False)
 
     def prepare_for_experiment(self,
                                parameter_domains
@@ -189,20 +177,32 @@ class _HyperParameterTuning(_Statistical_Project):
     def get_gridpoint_args(self):
         '''
         get the next grid point to be evaluated
-        :return:
+        :return: return args to be evaluated for the next grid point
         '''
+        # get the new point
         gridpoint_args = self.parameter_configurations[self.config.iteration]
+
+        # keep track of iterations
         self.config.iteration += 1
 
+        # change the root for the new point
         self.root = self.original_root + '/grid_point' + str(
             self.config.iteration)
         if not os.path.exists(self.root):
             os.makedirs(self.root)
 
+        # start timing the evaluation
+        self.timer = dt_tool.now()
+
         return gridpoint_args
 
     def record_performance(self):
+        '''
+        record the performance of the current grid point results
+        '''
 
+        # load all previous gridpoint results, this will add the newest one
+        # onto the end of the results csv
         hptuning_test_res = []
         for path, subdirs, files in os.walk(self.original_root):
             for name in files:
@@ -235,12 +235,23 @@ class _HyperParameterTuning(_Statistical_Project):
                          res['Parameters'].apply(pd.Series)], axis=1)
         res.to_csv(self.original_root + '/Experimental_Results.csv', index=False)
 
+        # print the results and the time it took to evaluate the point so you
+        # can guess how much longer the code will run for
         delta_time = dt_tool.now() - self.timer
         self.timer = dt_tool.now()
         print('This past experimental parameter configuration took ' + str(
             delta_time) + ' long')
 
     def evaluate_performance(self, df):
+        '''
+        evaluation of the results given the penultimate function. For basic
+        classification and regression this can just be a column of the
+        evaluator. But for something like segmentation where you calculate a
+        non binary performance metric, you can take the mean of harmonic mean of
+        DSC of Jaccard coefficient on all the testing examples.
+        :param df: dataframe of results from an evaluator
+        :return: the performance amount
+        '''
         try:
             eval_on = df[self.config.criterion].apply(eval).to_list()
         except:

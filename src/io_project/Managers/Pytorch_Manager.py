@@ -40,7 +40,7 @@ class Pytorch_Manager(IO_Manager):
     def save_final_model(self, trainer_config, data_processor_config,
                          model_config):
         torch.save(self.best_model,
-                   self.root + '/final_model.pth')
+                   os.path.join(self.root, 'final_model.pth'))
         # Save the trianer config file
         trainer_config.save_pretrained(self.root)
         data_processor_config.save_pretrained(self.root)

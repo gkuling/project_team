@@ -17,7 +17,8 @@ class _TrainDeploy(_Statistical_Project):
     Functionality:
     - straight train: test_size must be 0, and validation size must be zero
     - train test: have a portion of test data
-    - train validation and test: have a portion of testing data and validation data
+    - train validation and test: have a portion of testing data and validation
+        data
     - train validation: have a portion of validation but not test
     '''
     def __init__(self, io_config_input=io_traindeploy_config()):
@@ -27,28 +28,15 @@ class _TrainDeploy(_Statistical_Project):
     def prepare_for_experiment(self):
         '''
         Preliminary organization tasks before training begins.
-        1. Load data sets
-        2. Rename columns for X and y so they are consistent in downstream tasks
-        3. save the data used in the experiment folder for records
+        1. Load data sets, rename columns for X and y so they are consistent
+            in downstream tasks
+        2. save the data used in the experiment folder for records
         '''
         print('IO Message: Setting up data for training')
         self.config.save_pretrained(self.root)
 
-        # load the dataframe
-        if type(self.config.data_csv_location)==pd.DataFrame:
-            data_file = self.config.data_csv_location
-        elif os.path.exists(self.config.data_csv_location):
-            data_file = pd.read_csv(self.config.data_csv_location)
-        else:
-            raise Exception('The data_csv_location given is not a pandas '
-                            'dataframe or a file that exists. ')
-
-        # designate X and y
-        data_file = self.remap_X(data_file)
-        data_file = self.remap_y(data_file)
-
-        # determine how to group data by and fine the grouped data examples
-        data_file, session_list = self.get_session_list(data_file)
+        # load dataset, rename data and group examples
+        data_file, session_list = self.load_rename_group_data()
 
         ### COME BACK FOR THIS SECTION
         if self.config.val_data_csv_location and \
@@ -59,9 +47,11 @@ class _TrainDeploy(_Statistical_Project):
             vl_data_df = self.remap_X(vl_data_df)
             vl_data_df = self.remap_y(vl_data_df)
 
-            vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
+            vl_data_df.to_csv(os.path.join(self.root, 'vl_dset.csv'),
+                              index=False)
             tr_data_df = data_file
-            tr_data_df.to_csv(self.root + '/tr_dset.csv', index=False)
+            tr_data_df.to_csv(os.path.join(self.root, 'tr_dset.csv'),
+                              index=False)
         else:
             # split and process the data given the proportions
             if self.config.stratify_by:
@@ -89,21 +79,24 @@ class _TrainDeploy(_Statistical_Project):
             tr_data_df = data_file[
                 data_file[self.config.group_data_by].isin(train_list)
             ]
-            tr_data_df.to_csv(self.root +'/tr_dset.csv', index=False)
+            tr_data_df.to_csv(os.path.join(self.root, 'tr_dset.csv'),
+                              index=False)
 
             # validation
             if val_list:
                 vl_data_df = data_file[
                     data_file[self.config.group_data_by].isin(val_list)
                 ]
-                vl_data_df.to_csv(self.root + '/vl_dset.csv', index=False)
+                vl_data_df.to_csv(os.path.join(self.root, 'vl_dset.csv'),
+                                  index=False)
 
             # inference
             if test_list:
                 ts_data_df = data_file[
                     data_file[self.config.group_data_by].isin(test_list)
                 ]
-                ts_data_df.to_csv(self.root + '/if_dset.csv', index=False)
+                ts_data_df.to_csv(os.path.join(self.root, 'if_dset.csv'),
+                                  index=False)
 
     def prepare_for_inference(self, data_file=None):
         '''
@@ -114,8 +107,8 @@ class _TrainDeploy(_Statistical_Project):
         ### Case for running inference:
         # 1. test_size>0.0 => this would be done when prepare_for_experiment
         # is ran
-        if self.config.test_size>0.0 and os.path.exists(self.root +
-                                                        '/if_dset.csv'):
+        if self.config.test_size>0.0 and os.path.exists(
+                os.path.join(self.root,'if_dset.csv')):
             pass
         else:
             # 2. data_file given to the manager.
@@ -137,16 +130,18 @@ class _TrainDeploy(_Statistical_Project):
                 data_set = pd.read_csv(self.config.inf_data_csv_location)
 
             else:
-                raise Exception("The four criteria for setting inference data "
-                                "is "
-                                "not being met. 'data_file' must be a file "
-                                "location, 'data_file' is a pandas Dataframe, "
-                                "config 'inf_data_csv_location' must not be None, "
-                                "or the config 'test_size' must be >0.0")
+                raise Exception(
+                    "The four criteria for setting inference data is not "
+                    "being met. 'data_file' must be a file location, "
+                    "'data_file' is a pandas Dataframe, config "
+                    "'inf_data_csv_location' must not be None, or the config "
+                    "'test_size' must be >0.0"
+                )
 
             # required to rename X becausewe are running inference
             data_set = self.remap_X(data_set)
-            # throw warning if y can not be remapped because we may not know y for the set
+            # throw warning if y can not be remapped because we may not know
+            # y for the set
 
             try:
                 data_set = self.remap_y(data_set)
@@ -157,10 +152,11 @@ class _TrainDeploy(_Statistical_Project):
                           'contain y labels. It cannot be used for performance '
                           'evaluation.')
 
-            data_set.to_csv(self.root + '/if_dset.csv', index=False)
+            data_set.to_csv(os.path.join(self.root, 'if_dset.csv'), index=False)
         print('IO Message: Inference data is set up. ')
 
-    ### CONSIDER DELETING BELOW AS IT WAS USED FOR A SEGENTATION KFOLD EXPERIMENT.
+    ### CONSIDER DELETING BELOW AS IT WAS USED FOR A SEGENTATION KFOLD
+    ### EXPERIMENT.
     ### I DO NOT BELIEVE IT IS PRACTICAL FOR PROJECT TEAM AND THIS PROJECT
     # def finished_inf_validation(self, results_df):
     #     summary = {nm:[] for nm in results_df.columns}
@@ -193,5 +189,5 @@ class _TrainDeploy(_Statistical_Project):
     #         [results_df, summary],
     #         ignore_index=True
     #     )
-    #     output_results.to_csv(self.root + '/Full_TrainTest_TestResults.csv',
+    #     output_results.to_csv(os.path.join(self.root, 'Full_TrainTest_TestResults.csv'),
     #                           index=False)
