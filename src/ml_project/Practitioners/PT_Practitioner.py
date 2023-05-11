@@ -139,19 +139,10 @@ class PT_Practitioner(object):
                                   'run inference function.')
 
     def from_pretrained(self, model_folder=None):
-        if model_folder:
-            state = torch.load(
-                    model_folder + '/final_model.pth'
-                )
+        self.io_manager.model_from_pretrained(self, model_folder)
 
-        else:
-            state = torch.load(
-                    self.io_manager.root + '/final_model.pth'
-                )
-        state = {k.split('module.')[1] if k.startswith('module.') else k: v for k,v in state.items()}
-        self.model.load_state_dict(state)
-
-
+    def save_pretrained(self, model_folder=None):
+        self.io_manager.model_save_pretrained(self, model_folder)
 
     def set_custom_transforms(self, transforms_list):
         assert type(transforms_list)==list
@@ -321,7 +312,7 @@ class PT_Practitioner(object):
         self.setup_training_accessories()
 
         if torch.cuda.is_available():
-            self.io_manager.set_best_model(
+            self.io_manager.set_final_model(
                 self.model.cpu().state_dict())
             self.model = self.model.cuda()
             if self.config.data_parallel:
@@ -330,7 +321,7 @@ class PT_Practitioner(object):
                 self.model = torch.nn.DataParallel(self.model)
 
         else:
-            self.io_manager.set_best_model(
+            self.io_manager.set_final_model(
                 self.model.state_dict())
 
         print('ML Message: ')
@@ -376,32 +367,34 @@ class PT_Practitioner(object):
                                 self.config.best_vl_loss = vl_loss
                                 self.config.best_vl_step = self.config.trained_steps
                                 if torch.cuda.is_available():
-                                    self.io_manager.set_best_model(
+                                    self.io_manager.set_final_model(
                                         self.model.cpu().state_dict())
                                     self.model.cuda()
                                 else:
-                                    self.io_manager.set_best_model(
+                                    self.io_manager.set_final_model(
                                         self.model.state_dict())
                         else:
                             if vl_loss>self.config.best_vl_loss:
                                 self.config.best_vl_loss = vl_loss
                                 self.config.best_vl_step = self.config.trained_steps
                                 if torch.cuda.is_available():
-                                    self.io_manager.set_best_model(
+                                    self.io_manager.set_final_model(
                                         self.model.cpu().state_dict())
                                     self.model.cuda()
                                 else:
-                                    self.io_manager.set_best_model(
+                                    self.io_manager.set_final_model(
                                         self.model.state_dict())
                     else:
                         if torch.cuda.is_available():
-                            self.io_manager.set_best_model(
+                            self.io_manager.set_final_model(
                                 self.model.cpu().state_dict())
                             self.model.cuda()
                         else:
-                            self.io_manager.set_best_model(
+                            self.io_manager.set_final_model(
                                 self.model.state_dict())
-                    self.io_manager.save_model_checkpoint(self.config)
+                    self.io_manager.save_model_checkpoint(
+                        self
+                    )
 
                 if batch_idx==len(epoch_iterator)-1:
                     epoch_iterator.set_postfix({'Epoch loss': np.mean(tr_loss)})
@@ -417,30 +410,30 @@ class PT_Practitioner(object):
                     self.config.best_vl_loss = vl_loss
                     self.config.best_vl_step = self.config.trained_steps
                     if torch.cuda.is_available():
-                        self.io_manager.set_best_model(
+                        self.io_manager.set_final_model(
                             self.model.cpu().state_dict())
                         self.model.cuda()
                     else:
-                        self.io_manager.set_best_model(
+                        self.io_manager.set_final_model(
                             self.model.state_dict())
             else:
                 if vl_loss>self.config.best_vl_loss:
                     self.config.best_vl_loss = vl_loss
                     self.config.best_vl_step = self.config.trained_steps
                     if torch.cuda.is_available():
-                        self.io_manager.set_best_model(
+                        self.io_manager.set_final_model(
                             self.model.cpu().state_dict())
                         self.model.cuda()
                     else:
-                        self.io_manager.set_best_model(
+                        self.io_manager.set_final_model(
                             self.model.state_dict())
         if vl_dtldr is None:
             if torch.cuda.is_available():
-                self.io_manager.set_best_model(
+                self.io_manager.set_final_model(
                     self.model.cpu().state_dict())
                 self.model = self.model.cuda()
             else:
-                self.io_manager.set_best_model(
+                self.io_manager.set_final_model(
                     self.model.state_dict())
         self.io_manager.save_final_model(self.config,
                                          self.data_processor.config,

@@ -112,10 +112,15 @@ def visualize_example(batch_data, pred, folder, epch,title, message=None):
                 cmap='gray', aspect='auto')
 
     if message:
-        fig_name = folder + '/valexample_atepoch' + str(epch) + '_' +  message\
-                   + '.pdf'
+        fig_name = os.path.join(
+            folder,
+            'valexample_atepoch' + str(epch) + '_' +  message + '.pdf'
+        )
     else:
-        fig_name = folder + '/valexample_atepoch' + str(epch) + '.pdf'
+        fig_name = os.path.join(
+            folder,
+            'valexample_atepoch' + str(epch) + '_' + '.pdf'
+        )
     plt.savefig(fig_name)
     plt.close(fig)
 
@@ -339,10 +344,10 @@ class UNet_Practitioner(PT_Practitioner):
     #     ax[2,2].imshow(pred[2,mids[0]], cmap='gray')
     #     ax[2,3].hist(pred[:,mids[0]].flatten(), bins=51)
     #     if message:
-    #         fig_name = folder + '/' + str(batch_data['AccNum']) + \
-    #                    '_' +  message + '.pdf'
+    #         fig_name = os.path.join(folder, str(batch_data['AccNum']) + \
+    #                    '_' +  message + '.pdf')
     #     else:
-    #         fig_name = folder + '/' + str(batch_data['AccNum']) + \
-    #                    '.pdf'
+    #         fig_name = os.path.join(folder, str(batch_data['AccNum']) + \
+    #                    '.pdf')
     #     plt.savefig(fig_name)
     #     plt.clf()

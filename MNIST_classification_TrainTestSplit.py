@@ -28,6 +28,8 @@ parser.add_argument('--working_dir',type=str,
                     default='/amartel_data/Grey/pro_team_examples',
                     help='The current directory to save models, and configs '
                          'of the experiment')
+parser.add_argument('--start_from_checkpoint', action='store_true',
+                    help='Choice to load the model from checkpoint folder')
 opt = parser.parse_args()
 
 # Prepare data if not already saved and set up
@@ -111,6 +113,9 @@ manager.prepare_for_experiment()
 
 processor.set_training_data(manager.root)
 processor.set_validation_data(manager.root)
+
+if opt.start_from_checkpoint:
+    manager.from_model_checkpoint(practitioner)
 
 practitioner.train_model()
 

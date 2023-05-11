@@ -7,7 +7,7 @@ ml_args = {
     'lr_decay_stepsize': 1,
     'lr_decay_gamma': 0.1,
     'lr_decay_step_timing': 'epoch',
-    'n_saves':1,
+    'n_saves':2,
     'validation_criteria':'min',
     'optimizer':'adadelta',
     'lr':1.0,

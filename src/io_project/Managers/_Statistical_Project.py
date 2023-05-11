@@ -19,7 +19,7 @@ class _Statistical_Project():
         self.config = config
 
         self.config = config
-        self.root = config.project_folder + '/' + config.experiment_name
+        self.root = os.path.join(config.project_folder, config.experiment_name)
         if not os.path.exists(self.root):
             os.makedirs(self.root)
 
@@ -184,7 +184,7 @@ class _Statistical_Project():
 
         # designate X and y
         dt_fl = self.remap_X(dt_fl)
-        data_file = self.remap_y(dt_fl)
+        dt_fl = self.remap_y(dt_fl)
 
         # determine how to group data by and fine the grouped data examples
         dt_fl, sssn_lst = self.get_session_list(dt_fl)

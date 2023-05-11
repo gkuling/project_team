@@ -50,7 +50,8 @@ class _HyperParameterTuning(_Statistical_Project):
         assert type(io_config_input)==io_hptuning_config
 
         self.config = io_config_input
-        self.root = io_config_input.project_folder + '/' + io_config_input.experiment_name
+        self.root = os.path.join(io_config_input.project_folder,
+                                 io_config_input.experiment_name)
         if not os.path.exists(self.root):
             os.makedirs(self.root)
         self.original_root = self.root
@@ -186,8 +187,8 @@ class _HyperParameterTuning(_Statistical_Project):
         self.config.iteration += 1
 
         # change the root for the new point
-        self.root = self.original_root + '/grid_point' + str(
-            self.config.iteration)
+        self.root = os.path.join(self.original_root,
+                                 'grid_point' + str(self.config.iteration))
         if not os.path.exists(self.root):
             os.makedirs(self.root)
 
@@ -233,7 +234,10 @@ class _HyperParameterTuning(_Statistical_Project):
                                     'File'])
         res = pd.concat([res.drop(['Parameters'], axis=1),
                          res['Parameters'].apply(pd.Series)], axis=1)
-        res.to_csv(self.original_root + '/Experimental_Results.csv', index=False)
+        res.to_csv(
+            os.path.join(self.original_root, 'Experimental_Results.csv'),
+            index=False
+        )
 
         # print the results and the time it took to evaluate the point so you
         # can guess how much longer the code will run for

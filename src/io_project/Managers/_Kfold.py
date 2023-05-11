@@ -23,7 +23,7 @@ class _Kfold(_Statistical_Project):
         super(_Kfold, self).__init__(io_config_input)
         assert type(io_config_input)==io_kfold_config
         self.config = io_config_input
-        self.root = io_config_input.project_folder + '/' + io_config_input.experiment_name
+        self.root = os.path.join(io_config_input.project_folder, io_config_input.experiment_name)
         if not os.path.exists(self.root):
             os.makedirs(self.root)
         self.original_root = self.root
