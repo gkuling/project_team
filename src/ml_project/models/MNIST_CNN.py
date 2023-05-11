@@ -9,6 +9,14 @@ class MNIST_CNN_config(project_config):
                  hidden_layer_parameters=128,
                  numpy_shape=(28,28),
                  **kwargs):
+        '''
+        efaut CNN to be used with MNIST examples, and a good example of how
+        to build a model in this project framework
+        :param kernel: kernel size of cnn layers
+        :param hidden_layer_parameters: number of hidden layer parameters
+        between flatten and output
+        :param numpy_shape: shape of image input
+        '''
         super(MNIST_CNN_config, self).__init__('MNIST_CNN')
         self.kernel = kernel
         self.hidden_layer_parameters = hidden_layer_parameters
@@ -19,6 +27,10 @@ class MNIST_CNN_config(project_config):
 
 class MNIST_CNN(nn.Module):
     def __init__(self, config = MNIST_CNN_config()):
+        '''
+        MNIST CNN example model
+        :param config:
+        '''
         super(MNIST_CNN, self).__init__()
         self.config = config
         self.conv1 = nn.Conv2d(1, 32, self.config.kernel, 1)
@@ -30,6 +42,11 @@ class MNIST_CNN(nn.Module):
         self.fc2 = nn.Linear(self.config.hidden_layer_parameters, 10)
 
     def forward(self, x):
+        '''
+        runs a forward pass on x
+        :param x: x is an input tensor
+        :return: output logits of the model
+        '''
         x = self.conv1(x)
         x = F.relu(x)
         x = self.conv2(x)

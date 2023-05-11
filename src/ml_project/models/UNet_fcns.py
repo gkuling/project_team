@@ -1,11 +1,16 @@
+'''
+This is all the functions needed for the UNet codes. There are down functions
+and up functions, each with their own 2D and 3D versions.
+'''
+
 import torch.nn as nn
 import torch
 import numpy as np
 
-class UNetDown(nn.Module):
+class UNetDown3D(nn.Module):
     def __init__(self, in_size, out_size, kernel, stride, padding, bias,
                  normalize, activation):
-        super(UNetDown, self).__init__()
+        super(UNetDown3D, self).__init__()
         layers = [nn.Conv3d(in_size, out_size, kernel, stride, padding,
                             bias=bias)]
         if normalize==True or normalize=='Batch':
@@ -36,10 +41,10 @@ class UNetDown(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-class UNetUp(nn.Module):
+class UNetUp3D(nn.Module):
     def __init__(self, in_size, out_size, kernel, stride, padding, bias,
                  normalize, activation):
-        super(UNetUp, self).__init__()
+        super(UNetUp3D, self).__init__()
         layers = [
             nn.ConvTranspose3d(in_size, out_size, kernel, stride, padding,
                                bias=bias)]
@@ -72,12 +77,12 @@ class UNetUp(nn.Module):
         x = self.model(x)
         return  x
 
-class UNet_base(nn.Module):
+class UNet_base_3D(nn.Module):
     def __init__(self, in_size, out_size, mid_size=None,
                  skip=False, normalize=True, bias=False,
                  activation='relu', layers=1, dropout=0,
                  kernel=(3,3,3)):
-        super(UNet_base, self).__init__()
+        super(UNet_base_3D, self).__init__()
         self.skip_connection = skip
         modules = []
         if not mid_size:
@@ -155,7 +160,7 @@ class UNet_base(nn.Module):
             )
         return out
 
-class UNet_DownFunction(nn.Module):
+class UNet_DownFunction_3D(nn.Module):
     def __init__(self,
                  in_ch,
                  out_ch,
@@ -168,11 +173,11 @@ class UNet_DownFunction(nn.Module):
                  inplane_kernel,
                  skip,
                  bias):
-        super(UNet_DownFunction, self).__init__()
+        super(UNet_DownFunction_3D, self).__init__()
         down_padding = tuple([np.ceil(0.5*k-1).astype(int) for k in
                               down_kernel])
         if strided:
-            self.down = UNetDown(in_ch,
+            self.down = UNetDown3D(in_ch,
                                  out_ch,
                                  down_kernel,
                                  (2,2,2),
@@ -180,7 +185,7 @@ class UNet_DownFunction(nn.Module):
                                  bias=bias,
                                  normalize=norm,
                                  activation=actvtn)
-            self.base_d = UNet_base(out_ch,
+            self.base_d = UNet_base_3D(out_ch,
                                     out_ch,
                                     normalize=norm,
                                     activation=actvtn,
@@ -194,7 +199,7 @@ class UNet_DownFunction(nn.Module):
                                      stride=2,
                                      padding=down_padding)
 
-            self.base_d = UNet_base(in_ch,
+            self.base_d = UNet_base_3D(in_ch,
                                     out_ch,
                                     normalize=norm,
                                     activation=actvtn,
@@ -205,7 +210,7 @@ class UNet_DownFunction(nn.Module):
     def forward(self, x):
         return self.base_d(self.down(x))
 
-class UNet_UpFunction(nn.Module):
+class UNet_UpFunction_3D(nn.Module):
     def __init__(self,
                  in_ch,
                  out_ch,
@@ -218,12 +223,12 @@ class UNet_UpFunction(nn.Module):
                  inplane_kernel,
                  skip,
                  bias):
-        super(UNet_UpFunction, self).__init__()
+        super(UNet_UpFunction_3D, self).__init__()
         self.layers = layers
         if strided:
             up_padding = tuple([np.ceil(0.5*k-1).astype(int) for k in
                                 up_kernel])
-            self.up = UNetUp(in_ch,
+            self.up = UNetUp3D(in_ch,
                              out_ch,
                              up_kernel,
                              (2,2,2),
@@ -231,7 +236,7 @@ class UNet_UpFunction(nn.Module):
                              bias=bias,
                              normalize=norm,
                              activation=actvtn)
-            self.base_d = UNet_base(in_ch,
+            self.base_d = UNet_base_3D(in_ch,
                                     out_ch,
                                     normalize=norm,
                                     activation=actvtn,
@@ -244,7 +249,7 @@ class UNet_UpFunction(nn.Module):
             self.up = nn.Upsample(scale_factor=2,
                                   mode='trilinear',
                                   align_corners=True)
-            self.base_d = UNet_base(in_ch,
+            self.base_d = UNet_base_3D(in_ch,
                                     out_ch,
                                     mid_size=in_ch/2,
                                     normalize=norm,

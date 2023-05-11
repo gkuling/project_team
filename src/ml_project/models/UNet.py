@@ -1,8 +1,4 @@
-import torch.nn.functional
-
 from src.project_config import project_config
-import numpy as np
-from torch import nn
 from src.ml_project.models.UNet_fcns import *
 
 class UNet_config(project_config):
@@ -26,6 +22,34 @@ class UNet_config(project_config):
                  conv_bias=False,
                  **kwargs
                  ):
+        '''
+        configuration for a UNet model
+        :param model_name: name of the model. Can be set to 'model_VNet' to
+        get the VNet default parameters
+        :param in_channels: amount of input channels
+        :param out_channels: amount of output classes
+        :param dimensionality: choice of 2D or 3D input
+        :param depth: how many layers down the UNet goes
+        :param base_filters: amount of base filters on the first downsample,
+        subsequent depths are typically 2x the previous layer
+        :param inplane_layers: amount of inplane convolutional blocks to be
+        used
+        :param skip_connections: bool. to use skip connects or not
+        :param batch_norm: bool. to use batchnormalization or not
+        :param activation: str. a pytorch activation code
+        :param strided_encoder: bool. choice of using a strided convolutional
+        function for downsampling or maxpooling
+        :param strided_decoder: boo. choice to use a deconvolutional function
+        for upsampling or resampling
+        :param dropout: amount of dropout to be used
+        :param inplane_kernel: kernel size inplane
+        :param downsample_kernel: downsample kernel size
+        :param upsample_kernel: upsample kernel size
+        :param conv_bias: bool. whther to used bias on the convolutional
+        functions. Typically False for batch_norm=True and True for
+        batch_norm=False
+        :param kwargs:
+        '''
         super(UNet_config, self).__init__('model_UNet')
         assert in_channels>0, "Input cannot have 0 channels"
         assert out_channels>0, "Output cannot have 0 channels."
@@ -45,6 +69,7 @@ class UNet_config(project_config):
             assert strided_encoder==True and strided_decoder==True
         self.model_name = model_name
         if self.model_name=='model_VNet':
+            # default parameter for a VNet
             base_filters = 16
             depth = 4
             inplane_layers = [1,2,3,3,3,3,3,2,1]
@@ -77,23 +102,20 @@ class UNet_config(project_config):
         if type(inplane_layers)==list and len(inplane_layers) == int(2*depth+1):
             if any([lyr==0 for lyr in inplane_layers]):
                 assert strided_encoder==True and \
-                       strided_decoder==True, "To use inplane_layers=0, " \
-                                             "both encoder and decoder must " \
-                                              "be strided. " \
-                                             "'strided_encoder==True and " \
-                                             "strided_decoder==True'"
+                       strided_decoder==True, \
+                    "To use inplane_layers=0, both encoder and decoder must " \
+                    "be strided. 'strided_encoder==True and " \
+                    "strided_decoder==True'"
             self.inplane_layers = inplane_layers
         elif type(inplane_layers)==int and inplane_layers>=0:
             if inplane_layers==0:
                 assert strided_encoder==True and \
                        strided_decoder==True and \
-                       skip_connections==False, "To use inplane_layers=0, " \
-                                                "both encoder and decoder " \
-                                                "must be strided and " \
-                                                "skip_connections turned off. " \
-                                                "'strided_encoder==True and " \
-                                                "strided_decoder==True and " \
-                                                "skip_connections==False'"
+                       skip_connections==False, \
+                    "To use inplane_layers=0, both encoder and decoder must " \
+                    "be strided and skip_connections turned off. " \
+                    "'strided_encoder==True and strided_decoder==True and " \
+                    "skip_connections==False'"
             self.inplane_layers = [inplane_layers for _ in range(int(2*depth
                                                                      +1))]
         else:
@@ -119,6 +141,9 @@ class UNet_config(project_config):
                 batch_norm))
 
 class UNet(nn.Module):
+    '''
+    Base class of UNet
+    '''
     def __init__(self, config = UNet_config()):
         super(UNet, self).__init__()
         self.config = config
@@ -135,13 +160,18 @@ class UNet(nn.Module):
         return self.decoder(levels)
 
 class UNetEncoder(nn.Module):
+    '''
+    Base class of UNet Encoder
+    '''
     def __init__(self, config=UNet_config()):
         super(UNetEncoder, self).__init__()
         self.config = config
         factor = 2 if not self.config.strided_decoder else 1
+
+        # Here is where to make the change of 2D vs 3D
         if config.dimensionality=='3D':
-            input_func = UNet_base
-            down_sample_func = UNet_DownFunction
+            input_func = UNet_base_3D
+            down_sample_func = UNet_DownFunction_3D
         elif config.dimensionality=='2D':
             input_func = UNet_base2d
             down_sample_func = UNet_DownFunction2d
@@ -149,6 +179,7 @@ class UNetEncoder(nn.Module):
             raise ValueError('Dimensionality of ' + str(
                 config.dimensionality) + ' is not an option. Choose 2D or 3D.')
 
+        # build layers
         self.layers = []
         if self.config.inplane_layers[0]>0:
             self.inc = input_func(self.config.in_channels,
@@ -213,10 +244,14 @@ class UNetEncoder(nn.Module):
             return x
 
 class UNetDecoder(nn.Module):
+    '''
+    Base object for UNet Decoder
+    '''
     def __init__(self, config=UNet_config()):
         super(UNetDecoder, self).__init__()
         self.config = config
         factor = 2 if not self.config.strided_decoder else 1
+        # Here is where to make the change of 2D vs 3D
         if config.dimensionality=='3D':
             if self.config.inplane_layers[-1]>0:
                 self.outc = nn.Conv3d(config.base_filters,
@@ -234,7 +269,7 @@ class UNetDecoder(nn.Module):
                               kernel_size=4,
                               padding='same')
                 )
-            up_sample_func = UNet_UpFunction
+            up_sample_func = UNet_UpFunction_3D
         elif config.dimensionality=='2D':
             if self.config.inplane_layers[-1]>0:
                 self.outc = nn.Conv2d(config.base_filters,
@@ -256,6 +291,8 @@ class UNetDecoder(nn.Module):
         else:
             raise ValueError('Dimensionality of ' + str(
                 config.dimensionality) + ' is not an option. Choose 2D or 3D.')
+
+        # build layers
         self.layers = []
         for lr in range(self.config.depth, 0, -1):
             _in = self.config.base_filters*2**(lr)
