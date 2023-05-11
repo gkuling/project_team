@@ -6,44 +6,52 @@ import statsmodels.api as sm
 
 class ROCAnalysis_Practitioner():
     def __init__(self,
-                 exposure,
-                 outcome,
-                 dt_processor,
+                 prediction,
+                 groundtruth,
                  io_manager):
-        self.exposure = exposure
-        self.outcome = outcome
-        self.dt_processor = dt_processor
+        '''
+        a quick statstical practitioner that will run ROC analysis on the
+        input data
+        :param prediction: the output of the model
+        :param groundtruth: the ground truth binary labels
+        :param io_manager:
+        '''
+        self.prediction = prediction
+        self.groundtruth = groundtruth
         self.io_manager = io_manager
 
-    def evaluate(self, dataframe=None):
-        if type(dataframe)==pd.DataFrame:
-            dataset = dataframe
-        else:
-            dataset = pd.DataFrame(
-                [self.dt_processor.if_dset.__getitem__(i) for i
-                 in range(len(self.dt_processor.if_dset))]
-            )
+    def evaluate(self, dataset):
+        '''
+        evaluate the ROC analysis on the given dataset
+        :param dataset: a dataframe of the results
+        '''
+        # rename columns if X and y are in the dataset
         if 'y' in dataset.columns:
-            dataset = dataset.rename(columns={'y':self.outcome})
+            dataset = dataset.rename(columns={'y':self.groundtruth})
         if 'X' in dataset.columns:
-            dataset = dataset.rename(columns={'X':self.exposure})
+            dataset = dataset.rename(columns={'X':self.prediction})
 
-        input_cat = dataset[[self.exposure,self.outcome]].copy()
-        outcome_cats = list(set(input_cat[self.outcome]))
-        outcome_cats.sort()
-        if outcome_cats==['Negative', 'Positive']:
-            input_cat[self.outcome] = input_cat[self.outcome].apply(
+        # double chek label sets
+        input_cat = dataset[[self.prediction,self.groundtruth]].copy()
+        groundtruth_cats = list(set(input_cat[self.groundtruth]))
+        groundtruth_cats.sort()
+        if groundtruth_cats==['Negative', 'Positive']:
+            input_cat[self.groundtruth] = input_cat[self.groundtruth].apply(
                 lambda vl: 1.0 if vl=='Positive' else 0.0
             )
-        fpr, tpr, _ = roc_curve(input_cat[self.outcome].values,
-                                input_cat[self.exposure].values)
+
+        # run ROC analysis from sklearn
+        fpr, tpr, _ = roc_curve(input_cat[self.groundtruth].values,
+                                input_cat[self.prediction].values)
         roc_auc = auc(fpr, tpr)
 
+        # save results
         self.roc_test = pd.DataFrame(
-            {'Metric': [self.exposure],
+            {'Metric': [self.prediction],
              'AUC': [roc_auc]}
         )
 
+        # plot the ROC curve
         plt.figure()
         lw = 2
         plt.plot(
@@ -62,9 +70,9 @@ class ROCAnalysis_Practitioner():
         plt.legend(loc="lower right")
 
         plt.savefig(os.path.join(self.io_manager.root,
-                                 self.exposure+'_'+self.outcome+
+                                 self.prediction+'_'+self.groundtruth+
                                  '_ROCAUCCurve.png'))
         plt.savefig(os.path.join(self.io_manager.root,
-                                 self.exposure+'_'+self.outcome+
+                                 self.prediction+'_'+self.groundtruth+
                                  '_ROCAUCCurve.pdf'))
         plt.clf()

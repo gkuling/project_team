@@ -13,60 +13,88 @@ from torchvision import transforms
 class PTClassification_Practitioner_config(PTPractitioner_config,
                                        project_config):
     def __init__(self,
-                 one_hot_encode=False,
                  **kwargs):
+        '''
+        Specific configuration for running pytorch classification
+        practitioner
+        '''
         super(PTClassification_Practitioner_config, self).__init__(
             config_type ='ML_PTClassificationPractitioner', **kwargs
         )
-        self.one_hot_encode = one_hot_encode
+
 
 class PTClassification_Practitioner(PT_Practitioner):
     def __init__(self, model, io_manager, data_processor,
                  trainer_config=PTClassification_Practitioner_config()):
+        '''
+        constructor of the pytorch classification practitioner. Inherits the
+        pytorch practitioner
+        :param model: pytorch model
+        :param io_manager: manager to be used
+        :param data_processor: data processor to be used
+        :param trainer_config: the configuration that holds parameters for a
+        practitioner
+        '''
         super(PTClassification_Practitioner, self).__init__(model=model,
                                                 io_manager=io_manager,
                                                 data_processor=data_processor,
                                                 trainer_config=trainer_config)
-        self.practitioner_name = 'PTClassification'
-        self.standard_transforms.extend([ToTensor(field_oi='y')])
 
-    def validate_model(self, mdl, val_dataloader):
+        self.practitioner_name = 'PTClassification'
+        # Standard transfroms for training would be in ensure all input and
+        # out put are tensors
+        self.standard_transforms.extend([ToTensor(field_oi='X'),
+                                         ToTensor(field_oi='y')])
+
+    def validate_model(self, val_dataloader):
+        '''
+        function that will run validation of the model
+        :param val_dataloader: validation data laoder
+        :return: the overall validation loss
+        '''
         print('')
-        mdl.eval()
+        self.model.eval()
         epoch_iterator = tqdm(val_dataloader, desc="  Validation",
                               position=0, leave=True)
         epoch_iterator.set_postfix({'loss': 'Initialized'})
         vl_lss = []
         with torch.no_grad():
             for batch_idx, data in enumerate(epoch_iterator):
+                # prepare data
                 if torch.cuda.is_available():
                     btch_x = data['X'].cuda()
                     btch_y = data['y'].cuda()
                 else:
                     btch_x = data['X']
                     btch_y = data['y']
-                mdl_pred = mdl(btch_x)
+                # run forward pass and test result
+                mdl_pred = self.model(btch_x)
                 loss = self.calculate_loss(mdl_pred, btch_y)
 
                 if torch.cuda.is_available():
                     loss = loss.cpu().numpy()[None]
                 else:
                     loss = loss.numpy()[None]
-                epoch_iterator.set_postfix({'loss': np.round(loss,
-                                                             decimals=2).tolist()})
+                epoch_iterator.set_postfix(
+                    {'loss': np.round(loss, decimals=2).tolist()}
+                )
                 vl_lss.append(loss)
+        # calculate average loss for the validaiton data
         vl_loss = np.array(vl_lss).mean(0)
         print(" ML Message: Validation Loss: " + str(vl_loss))
         return vl_loss[0]
 
-    def run_inference(self):
-        trnsfrms = [
-            Add_Channel(field_oi='X'),
-            MnStdNormalize_Numpy(norm=list(self.config.normalization_channels),
-                                 percentiles=self.config.normalization_percentiles,
-                                 field_oi='X'),
-            ToTensor(field_oi='X')
-        ]
+    def run_inference(self, return_output=False):
+        '''
+        run inference on the iference dataset in the processor
+        :param: return_output: bool to indicate logits are desired with the
+        results
+        :return: all prediction results are saved on the data processor
+        inference_results
+        '''
+        # here we only use the standard transforms that affects the input
+        trnsfrms = [trsnfrm for trsnfrm in self.standard_transforms if
+                    trsnfrm.field_oi=='X']
 
         self.data_processor.if_dset.set_transforms(transforms.Compose(trnsfrms))
 
@@ -77,15 +105,25 @@ class PTClassification_Practitioner(PT_Practitioner):
                               position=0, leave=True)
         return_results = []
         for batch_idx, data in enumerate(epoch_iterator):
+            # prepare data
             res = data.copy()
             if torch.cuda.is_available():
                 btch_x = data['X'][None,...].cuda()
             else:
                 btch_x = data['X'][None,...]
 
+            # run inference
             with torch.no_grad():
                 pred = self.model(btch_x)
 
+            # save logits if desired
+            if return_output:
+                if torch.cuda.is_available():
+                    res['outputs'] = pred.cpu().numpy()[0].tolist()
+                else:
+                    res['outputs'] = pred.numpy()[0].tolist()
+
+            # post process the result
             if torch.cuda.is_available():
                 res['pred_y'] = pred.cpu().numpy()
             else:
@@ -122,12 +160,17 @@ class PTClassification_Practitioner(PT_Practitioner):
 
 
             return_results.append(res)
-        self.data_processor.inference_results = pd.DataFrame(
-            [
-                {ky:v for ky, v in ex.items() if is_Primitive(v)}
-                for ex in return_results
-            ]
-        )
+
+        # save results in the data_processor
+        if return_output:
+            self.data_processor.inference_results = pd.DataFrame(return_results)
+        else:
+            self.data_processor.inference_results = pd.DataFrame(
+                [
+                    {ky:v for ky, v in ex.items() if is_Primitive(v)}
+                    for ex in return_results
+                ]
+            )
 
         torch.cuda.empty_cache()
         gc.collect()

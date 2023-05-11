@@ -1,3 +1,8 @@
+'''
+base project configuration inspired by the hugging face transformers
+configuration classes
+'''
+
 import os
 import copy
 import json
@@ -6,6 +11,11 @@ import inspect
 CONFIG_NAME = '.json'
 
 def is_Primitive(thing):
+    '''
+    check if the thing input is a primitive feature
+    :param thing:
+    :return:
+    '''
     primitives = (int, float, str, bool)
     if isinstance(thing, type(None)):
         return True
@@ -20,6 +30,10 @@ def is_Primitive(thing):
         return isinstance(thing, primitives)
 
 class project_config(object):
+    '''
+    base proejct config. Big contribution is it continually saves cnfigs as
+    json dictionaries that are easy to read in notepad and edit manually
+    '''
     def __init__(self,
                  config_type,
                  **kwargs

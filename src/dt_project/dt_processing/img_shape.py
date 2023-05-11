@@ -399,3 +399,21 @@ class OneHotEncode(_TensorProcessing):
         ipt[self.field_oi] = new_y
 
         return ipt
+
+class OneHotEncode_Seg(_TensorProcessing):
+    def __init__(self, max_class, field_oi='y'):
+        super(OneHotEncode_Seg, self).__init__()
+        self.max_class = max_class
+        self.field_oi = field_oi
+
+    def __call__(self, ipt):
+        assert ipt[self.field_oi].shape[0]==1
+
+        def one_hotEncode(im):
+            one_hot = np.zeros((self.max_class, *im.shape))
+            for i, unique_value in enumerate(np.unique(im)):
+                one_hot[i,...][im == unique_value] = 1
+            return one_hot
+        if self.max_class>1:
+            ipt[self.field_oi] = one_hotEncode(ipt[self.field_oi][0])
+        return ipt

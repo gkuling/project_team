@@ -4,7 +4,6 @@ Taken from https://github.com/wolny/pytorch-3dunet/blob/15852eac812a41d07202d172
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch import einsum
 from torch.autograd import Variable
 from torch.nn import MSELoss, SmoothL1Loss, L1Loss
 

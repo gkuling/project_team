@@ -1,5 +1,6 @@
 from src.project_config import project_config
 from src.dt_project.dt_processing import *
+from src.dt_project.dt_processing import functional as F
 import numpy as np
 from copy import deepcopy
 import torch
@@ -31,15 +32,54 @@ class PTPractitioner_config(project_config):
                  normalization_percentiles=(0.5,99.5),
                  normalization_channels=[(0.5,0.5)],
                  n_workers=0,
-                 visualize_val=False,
                  data_parallel=False,
+                 collate_function=None,
+                 batch_spoofing=False,
                  **kwargs):
+        '''
+        Config file for a pytorch practitioner
+        :param batch_size: mini batch size
+        :param n_epochs: amount of epochs to run
+        :param n_steps: amount of training iterations/steps to run
+            (optional: if n_epochs is given)
+        :param warmup: Portion of training used for warmup steps
+        :param n_saves: amount of times validation is run and the model saved
+        :param validation_criteria: choice of whether the validation loss is
+            minimized ('min') or maximized ('max')
+        :param optimizer: str; the type of optimizer to be used, ex.. 'sgd',
+            'adam' etc.
+        :param lr: learning rate
+        :param lr_decay: learning rate decay
+        :param lr_decay_stepsize: learning rate decay stepsize
+        :param lr_decay_gamma: learning rate decay gamma
+        :param lr_decay_step_timing: learning rate decay step timing being
+            either every 'batch' or every 'epoch'
+        :param grad_clip: gradient clip value
+        :param loss_type: loss function
+        :param affine_aug: indicate affien augmentation is being used
+        :param add_Gnoise: indicate whether gaussian noise will be added to
+            the images
+        :param gaussian_std: standard deviation of the gaussian noise added
+            to the images
+        :param normalization_percentiles: percentiles that the input will be
+            clipped by
+        :param normalization_channels: normalization mean and standard
+            deviations used
+        :param n_workers: number of worker that are used by the data loader
+        :param data_parallel: indicator if data parallel is desired
+        :param collate_function: collate function for the batch data
+        :param batch_spoofing: indicator of whther to use bacth spoofing or not
+        :param kwargs: any extra keywords are given. Thoise not used are
+            discarded.
+        '''
         super(PTPractitioner_config, self).__init__('ML_PTPractitioner')
         # Training Parameters
         self.loss_type = loss_type
         self.batch_size=batch_size
         self.n_epochs = n_epochs
         self.n_saves = n_saves
+        # if n_steps are given and no n_epochs, the validation interval can
+        # be easily calculated.
         if n_steps is not None:
             self.n_steps = n_steps
             self.vl_interval = int(np.round(self.n_steps / self.n_saves))
@@ -50,6 +90,7 @@ class PTPractitioner_config(project_config):
         self.lr_decay = lr_decay
         self.lr_decay_stepsize = lr_decay_stepsize
         self.lr_decay_gamma = lr_decay_gamma
+        assert lr_decay_step_timing=='epoch' or lr_decay_step_timing=='batch'
         self.lr_decay_step_timing = lr_decay_step_timing
         self.optimizer = optimizer
         self.lr = lr
@@ -65,7 +106,7 @@ class PTPractitioner_config(project_config):
 
         self.validation_criteria = validation_criteria
         self.n_workers = n_workers
-        self.visualize_val = visualize_val
+        self.batch_spoofing = batch_spoofing
 
         # Augmentation Transforms
         self.normalization_percentiles = normalization_percentiles
@@ -75,9 +116,21 @@ class PTPractitioner_config(project_config):
         self.affine_aug = affine_aug
         if affine_aug:
             self.initialize_augmentation_parameters()
-
+        if collate_function is not None:
+            if hasattr(collate_function, '__call__'):
+                self.collate_function = collate_function
+            elif collate_function=='same_size':
+                self.collate_function = F.make_all_tensors_same_size
+            else:
+                raise Exception(str(collate_function) +
+                                ' is not a recognized collate_function option. '
+                                'Must be a custom function or "same_size". '
+                                'Should implement more of these. ')
 
     def initialize_augmentation_parameters(self):
+        '''
+        function used to initialize the affine augmentation parameters
+        '''
         self.affine_aug_params = {
             'shift': (1,2,2),
             'rot': (1,2,2),
@@ -91,6 +144,17 @@ class PTPractitioner_config(project_config):
                                     scale=None,
                                     uniform_scale=None,
                                     order=None):
+        '''
+        setting the affien augmentatiion parameters
+        :param shift: tuple or list. the shift in each dimension
+        :param rot: tuple or list. rotation on each axis
+        :param scale: tuple or list. the portion fo scaling
+        :param uniform_scale: bule whether to sample augmentation from a
+            uniform distribution or a gaussian
+        :param order: the level of interpolation in resampling. 0=nearest,
+        1=linear, 3=cubic, ...  Follows skimage standards
+        :return:
+        '''
         if shift:
             self.affine_aug_params['shift'] = shift
         if rot:
@@ -103,6 +167,10 @@ class PTPractitioner_config(project_config):
             self.affine_aug_params['order'] = order
 
     def set_n_epochs(self, len_tr_dset):
+        '''
+        determine the amount of epochs if it is not given.
+        :param len_tr_dset: amount of training batches in the data
+        '''
         self.n_epochs = int(
             np.ceil(
                 (self.n_steps * self.batch_size)
@@ -113,24 +181,33 @@ class PTPractitioner_config(project_config):
 class PT_Practitioner(object):
     def __init__(self, model, io_manager, data_processor,
                  trainer_config=PTPractitioner_config()):
+        '''
+        constructor for the pytorch practitioner
+        :param model: pytorch model to be trained
+        :param io_manager: the manager of the project
+        :param data_processor: the processor for the data
+        :param trainer_config: configuration for the practitioner
+        '''
         self.model = deepcopy(model)
         self.io_manager = io_manager
         self.data_processor = data_processor
         self.config = trainer_config
 
         self.practitioner_name = 'base_PT'
-        self.standard_transforms = []
 
-        self.standard_transforms.extend([
-            Add_Channel(field_oi='X'),
-            MnStdNormalize_Numpy(norm=list(self.config.normalization_channels),
-                                 percentiles=self.config.normalization_percentiles,
-                                 field_oi='X'),
-            ToTensor(field_oi='X')
-        ])
         self.custom_transforms = None
 
-    def validate_model(self, mdl, val_dataloader):
+        # change standard_transforms based on the input data type
+        self.standard_transforms = []
+        if self.io_manager.config.X_dtype!='Text':
+            self.standard_transforms.extend([
+                Add_Channel(field_oi='X'),
+                MnStdNormalize_Numpy(norm=list(self.config.normalization_channels),
+                                     percentiles=self.config.normalization_percentiles,
+                                     field_oi='X')
+            ])
+
+    def validate_model(self, val_dataloader):
         raise NotImplementedError('This Parent class does not have a '
                                   'validate model function.')
 
@@ -139,25 +216,51 @@ class PT_Practitioner(object):
                                   'run inference function.')
 
     def from_pretrained(self, model_folder=None):
+        '''
+        load practitioner from a pretrained folder it was saved in.
+        :param model_folder: folder for the model to be loaded. Optional,
+            if not given the practitioner will ask the manager,
+        '''
         self.io_manager.model_from_pretrained(self, model_folder)
 
     def save_pretrained(self, model_folder=None):
+        '''
+        save practitioner to a pretrained folder.
+        :param model_folder: folder for the model to be saved. Optional,
+            if not given the practitioner will ask the manager,
+        '''
         self.io_manager.model_save_pretrained(self, model_folder)
 
     def set_custom_transforms(self, transforms_list):
+        '''
+        set custom_transforms used by the practitioner
+        :param transforms_list: list of transforms
+        '''
         assert type(transforms_list)==list
         self.custom_transforms = transforms_list
 
     def extend_custom_transforms(self, transforms_list):
+        '''
+        extend the custom_transforms used by the practitioner
+        :param transforms_list: list of transforms
+        '''
         assert type(transforms_list)==list
         self.custom_transforms.extend(transforms_list)
 
     def setup_dataloader(self, data_set):
+        '''
+        sets up data loaders for training or validation
+        :param data_set: data set type either 'training' or 'validation '
+        :return: data loader
+        '''
+        assert data_set=='training' or data_set=='validation'
+        # set up transforms
         trnsfrms = []
 
         if self.custom_transforms:
             trnsfrms.extend(deepcopy(self.custom_transforms))
 
+        # don't augment validation data
         if self.config.affine_aug and data_set=='training':
             trnsfrms.extend(
                 [AffineAugmentation(**self.config.affine_aug_params)]
@@ -166,25 +269,28 @@ class PT_Practitioner(object):
                 trnsfrms.extend(
                     [AffineAugmentation(field_oi='y')]
                 )
+
+        # don't augment with noise for validation
         if self.config.add_Gnoise and data_set=='training':
             trnsfrms.extend([
                 AddGaussainNoise(self.config.gaussian_std)
             ])
-
-
+        # custom transforms are always performed before standard transforms
         trnsfrms.extend(self.standard_transforms)
+
+        # build specific data loaders depending on the dataset type
         if data_set=='training':
             self.data_processor.tr_dset.set_transforms(transforms.Compose(
                 trnsfrms
             ))
             return DataLoader(
-                    self.data_processor.tr_dset,
-                    batch_size=self.config.batch_size,
-                    shuffle=True,
-                    drop_last=True,
-                    num_workers=self.config.n_workers
-                )
-
+                self.data_processor.tr_dset,
+                batch_size=self.config.batch_size,
+                shuffle=True,
+                drop_last=True,
+                num_workers=self.config.n_workers,
+                collate_fn=self.config.collate_function
+            )
         elif data_set=='validation':
             self.data_processor.vl_dset.set_transforms(transforms.Compose(
                 trnsfrms
@@ -197,7 +303,11 @@ class PT_Practitioner(object):
                                         'practitioner. ')
 
     def setup_training_accessories(self):
-
+        '''
+        Set up the training accessories based on the parameters in the config.
+        accessories are used for moving the parameters along the gradient,
+        so the optimizer and learning rate scheduler.
+        '''
         # setup the optimizer
         if self.config.optimizer=='adamw':
             self.optmzr = torch.optim.AdamW(self.model.parameters(),
@@ -237,6 +347,11 @@ class PT_Practitioner(object):
                             'and cosine_schedule_with_warmup. ')
 
     def setup_loss_functions(self):
+        '''
+        Set up the practitioner loss function based on the config.
+        Most are simple torch loss functions but the oportunity to use a
+        custom one is there.
+        '''
         if self.config.loss_type=='MSE':
             self.loss_function = torch.nn.MSELoss()
         elif self.config.loss_type=='L1':
@@ -260,23 +375,37 @@ class PT_Practitioner(object):
                 self.loss_function = self.loss_function.cuda()
 
     def setup_steps(self, tr_size):
-
+        '''
+        Function used to prepare the practitioner to know how long it needs
+        to run on the data. This framework performs everything based on
+        steps (or iterations), and not epochs, so epochs and dataset size
+        needs to be used to translate to steps.
+        :param tr_size: amount of batches in the training set
+        '''
         # Need to set all of
         # n_epochs, n_steps, vl_interval, and warmup steps
         # when setting n_epochs or n_steps
+
         if self.config.n_steps is None and not self.config.n_epochs is None:
+            # if no steps and epochs given
             self.config.n_steps = tr_size * self.config.n_epochs
+
         elif self.config.n_epochs is None and not self.config.n_steps is None:
+            # if no epochs given and steps given
             self.config.set_n_epochs(len(self.data_processor.tr_dset))
-        elif not self.config.n_epochs is None and not self.config.n_steps is None:
-            pass
+
         else:
             raise Exception('n_epochs and n_steps cannot both be None in the '
                             'PT_Pracitioner_config')
+
+        # set up the practitioner's  validation interval and save steps
         if self.config.vl_interval is None and not self.config.n_saves is None:
+            # if no val_interval but n_saves given
             self.config.vl_interval = \
                 np.round(self.config.n_steps / self.config.n_saves).astype(int)
+
         elif not self.config.vl_interval is None and self.config.n_saves is None:
+            # if no n_saves given but val_interval given
             self.config.n_saves = \
                 np.round(self.config.n_steps / self.config.vl_interval).astype(
                     int)
@@ -287,19 +416,27 @@ class PT_Practitioner(object):
                 'vl_interval and n_saves cannot both be None in the '
                 'PT_Pracitioner_config')
 
+        # set up warmup steps if needed
         if self.config.warmup is None:
             self.config.warmup = 0
         elif self.config.warmup <= 1.0 and self.config.warmup >= 0.0:
             self.config.warmup_steps = int(
                 np.round(self.config.n_steps * self.config.warmup))
-        elif type(self.config.warmup) == int:
+        elif type(self.config.warmup) == int and self.config.warmup_steps< \
+                self.config.n_steps:
             pass
         else:
             raise Exception('warmup in the PT_Pracitioner_config must be '
                             'None, a float between [0.0,1.0], or int amount '
-                            'of steps. ')
+                            'of steps less than n_steps. ')
 
     def train_model(self):
+        '''
+        A function that calls all the tasks neccessary to train a model based
+        on the parameters in the practitioner config.
+        '''
+
+        # Set up data
         tr_dtldr = self.setup_dataloader('training')
 
         if hasattr(self.data_processor, 'vl_dset'):
@@ -307,10 +444,12 @@ class PT_Practitioner(object):
         else:
             vl_dtldr = None
 
+        # set up training tools
         self.setup_steps(len(tr_dtldr))
         self.setup_loss_functions()
         self.setup_training_accessories()
 
+        # save the current model in the manager
         if torch.cuda.is_available():
             self.io_manager.set_final_model(
                 self.model.cpu().state_dict())
@@ -324,9 +463,16 @@ class PT_Practitioner(object):
             self.io_manager.set_final_model(
                 self.model.state_dict())
 
+        # batch_spoofing memory
+        if self.config.batch_spoofing:
+            split_multiple_memory = [1]
+        else:
+            split_multiple_memory = None
         print('ML Message: ')
         print('-'*5 + ' ' + self.practitioner_name + ' Practitioner Message:  \
             The Beginning of Training ')
+
+        # beginning epoch loop
         for epoch in range(1, self.config.n_epochs + 1):
 
             epoch_iterator = tqdm(tr_dtldr, desc="Epoch " + str(epoch)
@@ -334,19 +480,62 @@ class PT_Practitioner(object):
                                   position=0, leave=True)
             epoch_iterator.set_postfix({'loss': 'Initialized'})
             tr_loss = []
+            # begin batch loop
             for batch_idx, data in enumerate(epoch_iterator):
+                # Model will not be trained more steps than asked for
                 if self.config.trained_steps>=self.config.n_steps:
                     break
                 self.config.trained_steps+=1
+
                 self.model.train()
                 self.optmzr.zero_grad()
 
                 btch_x, btch_y = self.organize_input_and_output(data)
 
-                pred = self.model(btch_x)
+                # Alter training if batch spoofing
+                if self.config.batch_spoofing:
+                    # batch spoofing scheme to try splitting the batch by a
+                    # multiple of 2, if it doesn't work increase that
+                    # multiple until it fits without exceeding the batchsize
+                    continue_training = True
+                    split_multiple = max(1, 2 ** np.round(
+                        np.average(split_multiple_memory)
+                    ))
+                    while_cnt = 0
+                    while continue_training:
+                        while_cnt+=1
+                        if split_multiple>self.config.batch_size:
+                            raise RuntimeError(
+                                "The GPU you are trying to spoof on cannot "
+                                "hadle one training example. This "
+                                "practitioner cannot calculate a single step "
+                                "now. ")
+                        try:
+                            t_btch_x = torch.split(btch_x,
+                                                   int(btch_x.shape[0] /
+                                                       split_multiple))
+                            t_btch_y = torch.split(btch_y,
+                                                   int(btch_y.shape[0] /
+                                                       split_multiple))
+                            tracked_loss = []
+                            for partition in zip(t_btch_x, t_btch_y):
+                                pred = self.model(partition[0])
+                                loss = self.calculate_loss(pred, partition[1])
+                                loss.backward()
+                                tracked_loss.append(loss.item())
+                            continue_training = False
+                            split_multiple_memory.append(np.log2(split_multiple))
+                        except Exception as e:
+                            if type(e)==torch.cuda.OutOfMemoryError:
+                                split_multiple *= 2
+                            else:
+                                raise e
+                else:
+                    pred = self.model(btch_x)
 
-                loss = self.calculate_loss(pred, btch_y)
-                loss.backward()
+                    loss = self.calculate_loss(pred, btch_y)
+                    loss.backward()
+                    tracked_loss = None
                 if self.config.grad_clip:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(),
                                                    self.config.grad_clip)
@@ -355,13 +544,18 @@ class PT_Practitioner(object):
                 if hasattr(self, 'scheduler') and \
                         self.config.lr_decay_step_timing=='batch':
                     self.scheduler.step()
+                if tracked_loss is not None:
+                    loss = torch.tensor(tracked_loss).mean()
+
+                # report and record the loss
                 epoch_iterator.set_postfix({'loss': loss.item()})
                 tr_loss.append(loss.item())
 
+                # perform validation or save interval
                 if self.config.trained_steps-1!=0 and \
                         (self.config.trained_steps-1)%self.config.vl_interval==0:
                     if vl_dtldr:
-                        vl_loss = self.validate_model(self.model, vl_dtldr)
+                        vl_loss = self.validate_model(vl_dtldr)
                         if self.config.validation_criteria=='min':
                             if vl_loss<self.config.best_vl_loss:
                                 self.config.best_vl_loss = vl_loss
@@ -402,7 +596,7 @@ class PT_Practitioner(object):
             if hasattr(self, 'scheduler') and \
                     self.config.lr_decay_step_timing == 'epoch':
                 self.scheduler.step()
-
+        # perform one last validation run after all training is over
         if vl_dtldr:
             vl_loss = self.validate_model(self.model, vl_dtldr)
             if self.config.validation_criteria=='min':
@@ -427,6 +621,7 @@ class PT_Practitioner(object):
                     else:
                         self.io_manager.set_final_model(
                             self.model.state_dict())
+        # final save of the trained model
         if vl_dtldr is None:
             if torch.cuda.is_available():
                 self.io_manager.set_final_model(
@@ -438,17 +633,28 @@ class PT_Practitioner(object):
         self.io_manager.save_final_model(self.config,
                                          self.data_processor.config,
                                          self.model.config)
-
+        # empty all memory
         torch.cuda.empty_cache()
         gc.collect()
 
         print('ML Message: Finished Training ' + self.practitioner_name)
 
     def calculate_loss(self, py, y):
+        '''
+        Some specific handling of pytorch losses were hard coded.
+        :param py: prediction
+        :param y: ground truth
+        :return: calculated loss
+        '''
         if self.config.loss_type=='KLD':
+            # for KLD loss the prediction logits should be put through a
+            # log_softmax before being evaluated.
             return self.loss_function(torch.log_softmax(py, dim=1),
                                       y)
         elif self.config.loss_type=='NLL':
+            # for NLL loss, the prediction logits should be put through a
+            # log_softmax, and the groundtruth must be a LongTensor data
+            # type, and a specific dimensionality.
             if y.dim()==1:
                 return self.loss_function(torch.log_softmax(py, dim=1),
                                           y.type(torch.cuda.LongTensor)
@@ -466,6 +672,12 @@ class PT_Practitioner(object):
             return self.loss_function(py, y)
 
     def organize_input_and_output(self, batch_data):
+        '''
+        This will take the input and output for training and put it on cuda
+        if it is available. Other wise it just hands back the tensors as they are
+        :param batch_data: the data from the dataloader
+        :return: input_tensor, and an output_tensor
+        '''
         if type(batch_data['X'])!=dict:
             if torch.cuda.is_available():
                 input_tensor = batch_data['X'].cuda()

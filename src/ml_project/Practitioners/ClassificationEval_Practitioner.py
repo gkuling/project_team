@@ -125,6 +125,14 @@ class ClassificationEval_Practitioner():
         print('ML Message: Finished Evaluation of classification maps.')
 
     def evaluate_metric(self, met, p, g):
+        '''
+        calculation of the given metric based on the name prediction (p) and
+        groundtruth (g)
+        :param met: name of metric
+        :param p: prediction
+        :param g: groundtruth
+        :return: result
+        '''
         individual_label_maps = [(g==float(u),p==float(u)) for u in
                                  range(int(np.unique(g).max())+1)]
         if met=='DSC' or met=='F1':
