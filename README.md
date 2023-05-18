@@ -77,6 +77,3 @@ a Statistical Practitioner performs all machine learning algorithms, and statist
 * `ROCAnalysis_Practitioner`: this will calculate ROCAUC and print and ROC curve for two columns in a dataframe. 
 
 To come: `PTSegmentation_Practitioner` that can handle the tasks of segmentatin, and `Transformers_Practitioner` that can handle tasks specific to the hugging face transformers package 
-
-
-
