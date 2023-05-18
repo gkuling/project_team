@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from src.io_project.IO_config import io_config
 from sklearn.model_selection import train_test_split
 
 class _Statistical_Project():
@@ -16,8 +15,6 @@ class _Statistical_Project():
         '''
         :param config: an io_config
         '''
-        self.config = config
-
         self.config = config
         self.root = os.path.join(config.project_folder, config.experiment_name)
         if not os.path.exists(self.root):

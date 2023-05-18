@@ -1,7 +1,6 @@
 from src.io_project.IO_config import io_config
 import os
 import pandas as pd
-import numpy as np
 from ._Statistical_Project import _Statistical_Project
 
 class io_traindeploy_config(io_config):
