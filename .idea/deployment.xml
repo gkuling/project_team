@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="gkuling@titania.sri.utoronto.ca:22 password" exclude=".svn;.cvs;.idea;.DS_Store;.git;.hg;*.hprof;*.pyc; *.csv;*.pth; *.pt" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false" autoUploadExternalChanges="true">
-    <option name="confirmBeforeUploading" value="false" />
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="gkuling@titania.sri.utoronto.ca:22 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/project_team" local="$PROJECT_DIR$" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="gkuling@titania.sri.utoronto.ca:22 password (1)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
     </serverData>
-    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
