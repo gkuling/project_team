@@ -126,6 +126,8 @@ class PTPractitioner_config(project_config):
                                 ' is not a recognized collate_function option. '
                                 'Must be a custom function or "same_size". '
                                 'Should implement more of these. ')
+        else:
+            self.collate_function = None
 
     def initialize_augmentation_parameters(self):
         '''
@@ -598,7 +600,7 @@ class PT_Practitioner(object):
                 self.scheduler.step()
         # perform one last validation run after all training is over
         if vl_dtldr:
-            vl_loss = self.validate_model(self.model, vl_dtldr)
+            vl_loss = self.validate_model(vl_dtldr)
             if self.config.validation_criteria=='min':
                 if vl_loss<self.config.best_vl_loss:
                     self.config.best_vl_loss = vl_loss
@@ -630,9 +632,7 @@ class PT_Practitioner(object):
             else:
                 self.io_manager.set_final_model(
                     self.model.state_dict())
-        self.io_manager.save_final_model(self.config,
-                                         self.data_processor.config,
-                                         self.model.config)
+        self.io_manager.model_save_pretrained(self)
         # empty all memory
         torch.cuda.empty_cache()
         gc.collect()

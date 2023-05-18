@@ -135,8 +135,6 @@ for k in range(starting_fold, manager.config.k_folds):
     print(' Finished running fold number: ' + str(
         k))
     print('-'*120)
-    break
-
 
 manager.finished_kfold_validation()
 

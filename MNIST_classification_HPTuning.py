@@ -172,7 +172,6 @@ for i_run in range(manager.config.iteration,
         print(' Finished running parameters, but there was a failure')
 
     manager.record_performance()
-    break
 
 print('End of MNIST_Classification_HPTuning.py')
 
