@@ -131,3 +131,5 @@ dmypy.json
 
 # pcharm
 .idea
+.idea/workspace.xml
+.idea/.name
