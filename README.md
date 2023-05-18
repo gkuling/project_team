@@ -50,33 +50,14 @@ This object is largely inspired by the *transformers* package from huggingface. 
 
 ## IO Managers
 
-A manager has the job of handling all input and output functions with data and memory. A manager can take a csv file of all training data, and organize it for a specific statistical project. There are currentlly 3 programmed statistical projects: 
-1. Train for deployment, or testing 
-2. hyper parameter tuning 
-3. k fold validation 
-
-There are managers for specific packages typically, a pytorch specific manager (`Pytorch_Manager`). 
-
-To come: sklearn manager (`SKLearn_Manager`)
+Description of a Manager and their base functions 
 
 ## Data Processors
 
-Data processor takes care of the data it is told to handle by the manager. It will apply the pretransforms that it is provided to a dataset. Each dataset has an option to `pre_load` into the process memory, or the processor can be set to preprocess data on the fly. It will ensure data for training and validation are treated similarly, and that inference data will not have an pretransforms to the model output. 
+Description of Processors and their base functions 
 
-Current options: 
-* `Images_Processor`: a processor specialized in handling PIL Image package processing 
-* `Text_Processor`: a processor specialized in handling Text data wiht NLTK and huggingface packages 
+## Statistical Practitioners 
 
-To come: `SITK_Processor` that will handle medical image data with simpleITK package. 
-
-## Statistical Practitioners
-
-a Statistical Practitioner performs all machine learning algorithms, and statistical analysis on the data from the processor, then provides saveable models or test results to the manager to be saved. Currently there is only a few major practitioners: 
-* `PT_Practitioner`: specialized in training and deploying pytorch models in a specific way. There are 2 current child objects for classification and regression. 
-* `ClassificationEval_Practitioner`: this will run evaluation on two columns in a dataframe with designated performance metrics meant for classification tasks. 
-* `ROCAnalysis_Practitioner`: this will calculate ROCAUC and print and ROC curve for two columns in a dataframe. 
-
-To come: `PTSegmentation_Practitioner` that can handle the tasks of segmentatin, and `Transformers_Practitioner` that can handle tasks specific to the hugging face transformers package 
-
+Description of Practitioners and their base functions
 
 
