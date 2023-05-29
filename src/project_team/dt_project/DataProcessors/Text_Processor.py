@@ -1,8 +1,7 @@
 import pandas as pd
 from torchvision import transforms
 
-from src.dt_project.datasets import Text_Dataset
-from src.dt_project.dt_processing import *
+from project_team import Text_Dataset
 from ._Processor import _Processor, DT_config
 
 class Text_Processor_config(DT_config):

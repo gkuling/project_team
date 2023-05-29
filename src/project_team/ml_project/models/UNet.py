@@ -1,5 +1,4 @@
-from src.project_config import project_config
-from src.ml_project.models.UNet_fcns import *
+from project_team.ml_project.models import *
 
 class UNet_config(project_config):
     def __init__(self,

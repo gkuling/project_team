@@ -1,4 +1,4 @@
-from src.project_config import project_config
+from project_team import project_config
 import os
 from datetime import datetime as dt
 

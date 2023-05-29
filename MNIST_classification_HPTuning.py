@@ -16,7 +16,7 @@ import pandas as pd
 from torchvision import datasets
 
 import ml_project
-import src as proteam
+import project_team as proteam
 import os
 
 r_seed = 2023322

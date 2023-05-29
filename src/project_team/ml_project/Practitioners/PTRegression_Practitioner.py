@@ -4,9 +4,8 @@ from tqdm import tqdm
 import gc
 from scipy.special import expit as sigmoid, softmax
 
-from src.project_config import project_config, is_Primitive
+from project_team import project_config, is_Primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
-from src.dt_project.dt_processing import *
 from torchvision import transforms
 
 class PTRegression_Practitioner_config(PTPractitioner_config,

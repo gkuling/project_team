@@ -1,6 +1,5 @@
-from src.project_config import project_config
-from src.dt_project.dt_processing import *
-from src.dt_project.dt_processing import functional as F
+from project_team import project_config
+from project_team import functional as F
 import numpy as np
 from copy import deepcopy
 import torch

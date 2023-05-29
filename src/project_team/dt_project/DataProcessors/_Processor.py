@@ -2,7 +2,7 @@ from torchvision import transforms
 import pandas as pd
 import os
 
-from src.project_config import project_config
+from project_team import project_config
 
 class DT_config(project_config):
     def __init__(self,
