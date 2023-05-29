@@ -1,4 +1,4 @@
-from project_team import is_Primitive
+from ..project_config import is_Primitive
 import pandas as pd
 from torch.utils.data import Dataset
 from copy import deepcopy
