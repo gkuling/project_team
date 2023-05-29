@@ -130,6 +130,6 @@ dmypy.json
 .pyre/
 
 # pcharm
-.idea/
+.idea
 .idea/workspace.xml
 .idea/.name
