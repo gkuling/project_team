@@ -5,7 +5,7 @@ import gc
 import numpy as np
 from scipy.special import expit as sigmoid
 
-from project_team import project_config, is_Primitive
+from project_team.project_config import project_config, is_Primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
 from torchvision import transforms
 

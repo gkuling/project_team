@@ -1,4 +1,4 @@
-from project_team import io_config
+from project_team.io_project.IO_config import io_config
 import os
 import pandas as pd
 from ._Statistical_Project import _Statistical_Project

@@ -1,4 +1,4 @@
-from project_team import io_config
+from project_team.io_project.IO_config import io_config
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, KFold, train_test_split

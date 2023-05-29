@@ -1,4 +1,4 @@
-from project_team import is_Primitive
+from project_team.project_config import is_Primitive
 import SimpleITK as sitk
 from copy import deepcopy
 import torch

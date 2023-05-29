@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from project_team import project_config
+from project_team.project_config import project_config
 
 class MNIST_CNN_config(project_config):
     def __init__(self,
