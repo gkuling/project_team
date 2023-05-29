@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="3b206c40-288b-4869-869b-e0582231fe23" name="Changes" comment="make new gitignore">
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExportToHTMLSettings">
+    <option name="OPEN_IN_BROWSER" value="true" />
+    <option name="OUTPUT_DIRECTORY" value="D:\Codes\take_a_look.html" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2JsOcr6JEiq2aochR3dCjI7IS7p" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.highlight.mappings&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.highlight.symlinks&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.show.date&quot;: &quot;false&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.show.permissions&quot;: &quot;false&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.show.size&quot;: &quot;false&quot;,
+    &quot;credentialsType com.jetbrains.python.remote.PyCreateRemoteInterpreterDialog$PyCreateRemoteSdkForm&quot;: &quot;Web Deployment&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Codes/project_team&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.fonts.default&quot;,
+    &quot;two.files.diff.last.used.file&quot;: &quot;D:/Codes/project_team/src/ml_project/Practitioners/PTClassification_Practitioner.py&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Codes\project_team" />
+      <recent name="D:\Codes\project_team\src\ml_project\Practitioners" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Codes\project_team\src\ml_project\Practitioners" />
+      <recent name="D:\Codes\project_team\src\ml_project\models" />
+      <recent name="D:\Codes\project_team\project_team" />
+      <recent name="D:\Codes\project_team\project_team\ml_project\models" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.MNIST_classification_HPTuning">
+    <configuration default="true" type="DjangoTestsConfigurationType">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="TARGET" value="" />
+      <option name="SETTINGS_FILE" value="" />
+      <option name="CUSTOM_SETTINGS" value="false" />
+      <option name="USE_OPTIONS" value="false" />
+      <option name="OPTIONS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="PyBehaveRunConfigurationType" factoryName="Behave">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="ADDITIONAL_ARGS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="MNIST_classification_HPTuning" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="project_team" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="CUDA_VISIBLE_DEVICES" value="7" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MNIST_classification_HPTuning.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="MNIST_classification_KFoldValidation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="project_team" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="CUDA_VISIBLE_DEVICES" value="7" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MNIST_classification_KFoldValidation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="MNIST_classification_TrainTestSplit" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="project_team" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="CUDA_VISIBLE_DEVICES" value="7" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MNIST_classification_TrainTestSplit.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="Python.FlaskServer">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="launchJavascriptDebuger" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docs" factoryName="Docutils task">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="docutils_input_file" value="" />
+      <option name="docutils_output_file" value="" />
+      <option name="docutils_params" value="" />
+      <option name="docutils_task" value="" />
+      <option name="docutils_open_in_browser" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docs" factoryName="Sphinx task">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="docutils_input_file" value="" />
+      <option name="docutils_output_file" value="" />
+      <option name="docutils_params" value="" />
+      <option name="docutils_task" value="" />
+      <option name="docutils_open_in_browser" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.MNIST_classification_KFoldValidation" />
+      <item itemvalue="Python.MNIST_classification_TrainTestSplit" />
+      <item itemvalue="Python.MNIST_classification_HPTuning" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.MNIST_classification_HPTuning" />
+        <item itemvalue="Python.MNIST_classification_KFoldValidation" />
+        <item itemvalue="Python.MNIST_classification_TrainTestSplit" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3b206c40-288b-4869-869b-e0582231fe23" name="Changes" comment="" />
+      <created>1672863406586</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1672863406586</updated>
+      <workItem from="1672863408888" duration="16552000" />
+      <workItem from="1672951668276" duration="130000" />
+      <workItem from="1672952152051" duration="91000" />
+      <workItem from="1673289878010" duration="1331000" />
+      <workItem from="1673623905309" duration="43000" />
+      <workItem from="1673623961167" duration="11437000" />
+      <workItem from="1673968567353" duration="9918000" />
+      <workItem from="1674237539603" duration="8443000" />
+      <workItem from="1674577782055" duration="96000" />
+      <workItem from="1674577897364" duration="5951000" />
+      <workItem from="1675185094524" duration="6052000" />
+      <workItem from="1675959768446" duration="864000" />
+      <workItem from="1676999834519" duration="487000" />
+      <workItem from="1677000433548" duration="178000" />
+      <workItem from="1677000759032" duration="167000" />
+      <workItem from="1677001069754" duration="632000" />
+      <workItem from="1679404606072" duration="12719000" />
+      <workItem from="1679510902748" duration="710000" />
+      <workItem from="1680015133701" duration="394000" />
+      <workItem from="1680019151045" duration="6014000" />
+      <workItem from="1680274204953" duration="13943000" />
+      <workItem from="1680798702555" duration="14000" />
+      <workItem from="1681493524936" duration="9792000" />
+      <workItem from="1681749209429" duration="3475000" />
+      <workItem from="1681756759004" duration="3941000" />
+      <workItem from="1681760723966" duration="695000" />
+      <workItem from="1681826878207" duration="16000" />
+      <workItem from="1681832930692" duration="6824000" />
+      <workItem from="1683203689287" duration="12000" />
+      <workItem from="1683203719204" duration="15725000" />
+      <workItem from="1683554771313" duration="38000" />
+      <workItem from="1683807328243" duration="20537000" />
+      <workItem from="1684157275856" duration="24000" />
+      <workItem from="1684416671142" duration="6104000" />
+      <workItem from="1684429593573" duration="388000" />
+      <workItem from="1684430012219" duration="125000" />
+      <workItem from="1684430168193" duration="161000" />
+      <workItem from="1684432824683" duration="318000" />
+    </task>
+    <task id="LOCAL-00001" summary="Some project edits and the beginning of the master readme file">
+      <created>1672940059490</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1672940059490</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Some project edits and the beginning of the master readme file">
+      <created>1672940174188</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1672940174188</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Add table of contents">
+      <created>1672940414277</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1672940414277</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Finished Debugging the Train Test Split example. Next working to document">
+      <created>1675193088674</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1675193088674</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Finished debugging the classification example and the requirements.txt">
+      <created>1679506041237</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1679506041237</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Finished debugging the classification example and the requirements.txt">
+      <created>1679506082592</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1679506082592</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Finished KFold Validation Example">
+      <created>1681504235894</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1681504235894</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Ran my first Coverage of all examples">
+      <created>1681760710312</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1681760710312</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Code cuts of dt_project module">
+      <created>1681836599998</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1681836599998</updated>
+    </task>
+    <task id="LOCAL-00010" summary="more Code cuts of io_project, and ml_project. Probably finished cutting scripts. Gonna re run coverage to see what it looks like">
+      <created>1681843349776</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1681843349776</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Final Commit before documentation and cleaning">
+      <created>1683204544066</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1683204544066</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Final Commit before documentation and cleaning">
+      <created>1683204562324</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1683204562324</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Main example codes for MNIST examples Cleaned">
+      <created>1683205903395</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1683205903395</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Documentation, cleaning and reformating of the data processors. Also introduced the textprocessor.">
+      <created>1683213502482</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1683213502482</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Documented for all tensor preprocessing. Reformating and deleting of redundancies could come later if need be">
+      <created>1683218034763</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1683218034763</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Documentation in the IO project">
+      <created>1683220510962</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1683220510962</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Documentation in the IO project: finished kfold and hptuning">
+      <created>1683810092362</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1683810092362</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Documentation in the IO project: finished managers. Debugged the checkpoint saving and loading for traintest split">
+      <created>1683822250515</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1683822250515</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Added some light documentation to the current saved models">
+      <created>1683824480821</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1683824480821</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Finished up the documentation of the practitioners.">
+      <created>1683828420495</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1683828420496</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Finished running debugging for some of the refactoring">
+      <created>1684424924806</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1684424924806</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Updated the Readme file">
+      <created>1684429518849</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1684429518849</updated>
+    </task>
+    <task id="LOCAL-00023" summary="ignore .idea for github">
+      <created>1684429669084</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1684429669085</updated>
+    </task>
+    <task id="LOCAL-00024" summary="fix this merging conflict">
+      <created>1684430135016</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1684430135016</updated>
+    </task>
+    <task id="LOCAL-00025" summary="make new gitignore">
+      <created>1684433133588</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1684433133588</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="Some project edits and the beginning of the master readme file" />
+    <MESSAGE value="Add table of contents" />
+    <MESSAGE value="Finished Debugging the Train Test Split example. Next working to document" />
+    <MESSAGE value="Finished debugging the classification example and the requirements.txt" />
+    <MESSAGE value="Finished KFold Validation Example" />
+    <MESSAGE value="Ran my first Coverage of all examples" />
+    <MESSAGE value="Code cuts of dt_project module" />
+    <MESSAGE value="more Code cuts of io_project, and ml_project. Probably finished cutting scripts. Gonna re run coverage to see what it looks like" />
+    <MESSAGE value="Final Commit before documentation and cleaning" />
+    <MESSAGE value="Main example codes for MNIST examples Cleaned" />
+    <MESSAGE value="Documentation, cleaning and reformating of the data processors. Also introduced the textprocessor." />
+    <MESSAGE value="Documented for all tensor preprocessing. Reformating and deleting of redundancies could come later if need be" />
+    <MESSAGE value="Documentation in the IO project" />
+    <MESSAGE value="Documentation in the IO project: finished kfold and hptuning" />
+    <MESSAGE value="Documentation in the IO project: finished managers. Debugged the checkpoint saving and loading for traintest split" />
+    <MESSAGE value="Added some light documentation to the current saved models" />
+    <MESSAGE value="Finished up the documentation of the practitioners." />
+    <MESSAGE value="Finished running debugging for some of the refactoring" />
+    <MESSAGE value="Updated the Readme file" />
+    <MESSAGE value="ignore .idea for github" />
+    <MESSAGE value="Merge branch 'develop'&#10;&#10;# Conflicts:&#10;#&#9;.gitignore" />
+    <MESSAGE value="fix this merging conflict" />
+    <MESSAGE value="make new gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="make new gitignore" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/ml_project/Practitioners/ClassificationEval_Practitioner.py</url>
+          <line>164</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/__init__.py</url>
+          <line>19</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/project_team$MNIST_classification_TrainTestSplit.coverage" NAME="MNIST_classification_TrainTestSplit Coverage Results" MODIFIED="1684422146083" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/project_team$Pytorch_Manager.coverage" NAME="Pytorch_Manager Coverage Results" MODIFIED="1683814167724" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/io_project/Managers" />
+    <SUITE FILE_PATH="coverage/project_team$coverage_test.coverage" NAME="coverage_test Coverage Results" MODIFIED="1681847920454" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/project_team$MNIST_classification_KFoldValidation.coverage" NAME="MNIST_classification_KFoldValidation Coverage Results" MODIFIED="1684423992021" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/project_team$hello.coverage" NAME="hello Coverage Results" MODIFIED="1673291157874" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/project_team$MNIST_classification.coverage" NAME="MNIST_classification Coverage Results" MODIFIED="1680288182999" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/project_team$MNIST_classification_HPTuning.coverage" NAME="MNIST_classification_HPTuning Coverage Results" MODIFIED="1684424375161" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+</project>
