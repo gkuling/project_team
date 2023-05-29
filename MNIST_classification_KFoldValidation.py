@@ -17,7 +17,7 @@ import pandas as pd
 from torchvision import datasets
 
 import ml_project
-import src as proteam
+import project_team as proteam
 import os
 from copy import deepcopy
 

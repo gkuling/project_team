@@ -2,9 +2,9 @@ import os.path
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from sklearn.metrics import accuracy_score
-from src.project_config import project_config, is_Primitive
+from project_team.project_config import project_config
+
 
 class ClassificationEval_Practitioner_config(project_config):
     def __init__(self,

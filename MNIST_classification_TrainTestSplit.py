@@ -18,7 +18,7 @@ import pandas as pd
 from torchvision import datasets
 from sklearn.metrics import accuracy_score
 
-import src as proteam
+import project_team as proteam
 import os
 from default_arguements import dt_args, ml_args, mdl_args
 
