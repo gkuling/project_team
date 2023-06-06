@@ -8,7 +8,8 @@ from torch.utils.data import DataLoader
 from transformers import get_cosine_schedule_with_warmup
 import gc
 from tqdm import tqdm
-
+from project_team.dt_project.dt_processing import Add_Channel, \
+    MnStdNormalize_Numpy
 class PTPractitioner_config(project_config):
     def __init__(self,
                  batch_size=2,
