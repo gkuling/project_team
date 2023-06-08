@@ -1,12 +1,11 @@
 # project_team
 
-## Conda Environment Setup 
+## Installation
 
-This project was developed using conda environments. To build the conda environment use the line of code below from the command line
-
-```angular2html
-conda create --name pro_team_env --channel default --channel conda-forge --channel pytorch --channel main --file requirements.txt
-```
+1. Download this project and move current working directory to this project 
+2. Run `python setup.py install`
+3. Run `pip install -r requirements.py`
+4. Use this package in other projects with the same environment
 
 ## Framework 
 

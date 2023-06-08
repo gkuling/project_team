@@ -8,6 +8,7 @@ from scipy.special import expit as sigmoid
 from project_team.project_config import project_config, is_Primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
 from torchvision import transforms
+from project_team.dt_project.dt_processing import ToTensor
 
 class PTClassification_Practitioner_config(PTPractitioner_config,
                                        project_config):

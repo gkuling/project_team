@@ -7,6 +7,7 @@ import contextlib
 from . import dt_project
 from . import io_project
 from . import ml_project
+from .ml_project import models
 
 
 # Not sure if this function is doing anything???
