@@ -3,10 +3,12 @@ import torch.nn
 from tqdm import tqdm
 import gc
 from scipy.special import expit as sigmoid, softmax
+import numpy as np
 
 from project_team.project_config import project_config, is_Primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
 from torchvision import transforms
+from project_team.dt_project.dt_processing import ToTensor, Cast_numpy
 
 class PTRegression_Practitioner_config(PTPractitioner_config,
                                        project_config):
