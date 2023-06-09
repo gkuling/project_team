@@ -103,8 +103,8 @@ class _Processor(object):
                     csv_location + ' does not contain a {}.csv '.format(
                         set_name))
             csv_location = pd.read_csv(
-                os.path.join(csv_location, '{}.csv'.format(set_name))
-
+                os.path.join(csv_location, '{}.csv'.format(set_name)),
+                na_filter=False
             )
         if set_name=='if_dset':
             # if loading an inference set, the preprocessing may not need to

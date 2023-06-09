@@ -41,7 +41,7 @@ class _TrainDeploy(_Statistical_Project):
         if self.config.val_data_csv_location and \
                 os.path.exists(self.config.val_data_csv_location):
             # process validation dataset if a dataframe is given
-            vl_data_df = pd.read_csv(self.config.val_data_csv_location)
+            vl_data_df = pd.read_csv(self.config.val_data_csv_location, na_filter=False)
 
             vl_data_df = self.remap_X(vl_data_df)
             vl_data_df = self.remap_y(vl_data_df)
@@ -116,7 +116,7 @@ class _TrainDeploy(_Statistical_Project):
                     data_file.endswith('.csv') and \
                     self.config.inf_data_csv_location is None and \
                     self.config.test_size==0.0:
-                data_set = pd.read_csv(data_file)
+                data_set = pd.read_csv(data_file, na_filter=False)
             # 3. datafile is a dataframe
             elif type(data_file)==pd.DataFrame:
                 data_set = data_file
@@ -126,7 +126,7 @@ class _TrainDeploy(_Statistical_Project):
                     os.path.exists(self.config.inf_data_csv_location) and \
                     self.config.inf_data_csv_location.endswith('.csv') and \
                     self.config.test_size==0.0:
-                data_set = pd.read_csv(self.config.inf_data_csv_location)
+                data_set = pd.read_csv(self.config.inf_data_csv_location, na_filter=False)
 
             else:
                 raise Exception(

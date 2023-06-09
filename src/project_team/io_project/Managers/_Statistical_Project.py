@@ -176,7 +176,7 @@ class _Statistical_Project():
         if type(self.config.data_csv_location) == pd.DataFrame:
             dt_fl = self.config.data_csv_location
         elif os.path.exists(self.config.data_csv_location):
-            dt_fl = pd.read_csv(self.config.data_csv_location)
+            dt_fl = pd.read_csv(self.config.data_csv_location, na_filter=False)
         else:
             raise Exception('The data_csv_location given is not a pandas '
                             'dataframe or a file that exists. ')

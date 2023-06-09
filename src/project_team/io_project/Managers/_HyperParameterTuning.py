@@ -213,7 +213,7 @@ class _HyperParameterTuning(_Statistical_Project):
         for fl in hptuning_test_res:
             try:
                 perf = self.evaluate_performance(
-                    pd.read_csv(fl)
+                    pd.read_csv(fl, na_filter=False)
                 )
             except:
                 perf = 'FAIL'

@@ -93,7 +93,7 @@ class ClassificationEval_Practitioner():
         elif type(data)==list:
             data = pd.DataFrame(data)
         elif os.path.exists(data) and data.endswith('.csv'):
-            data = pd.read_csv(data)
+            data = pd.read_csv(data, na_filter=False)
         else:
             raise Exception('The data given to the segmentation evaluator is '
                             'not a list of results or a csv file. ')

@@ -178,7 +178,7 @@ class _Kfold(_Statistical_Project):
                 if name.endswith('test_result_evaluation.csv'):
                     k_fold_test_res.append(os.path.join(path, name))
         k_fold_test_res = pd.concat(
-            [pd.read_csv(fl) for fl in k_fold_test_res]
+            [pd.read_csv(fl, na_filter=False) for fl in k_fold_test_res]
         )
 
         # Want to have different types of summaries based on the output,
