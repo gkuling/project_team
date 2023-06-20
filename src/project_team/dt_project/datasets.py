@@ -225,3 +225,14 @@ class Text_Dataset(Project_Team_Dataset):
     def keep_data_type_specific_function(self, processed_x):
         # Checking that the entire input_data of the model is not 0.0
         return not all([input_data == 0 for input_data in processed_x['X']])
+
+class SITK_Dataset(Images_Dataset):
+    '''
+    A dataset that is designated to handling SimpleITK imaging files
+    '''
+    def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None, transforms=None,
+                 preload_data=False):
+        super(SITK_Dataset, self).__init__(data_df,
+                                           preload_transforms,
+                                           transforms,
+                                           preload_data)
