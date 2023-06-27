@@ -396,10 +396,23 @@ class PT_Practitioner(object):
         elif self.config.n_epochs is None and not self.config.n_steps is None:
             # if no epochs given and steps given
             self.config.set_n_epochs(len(self.data_processor.tr_dset))
-
-        else:
+        elif self.config.n_epochs is None and self.config.n_steps is None:
             raise Exception('n_epochs and n_steps cannot both be None in the '
                             'PT_Pracitioner_config')
+        else:
+            if tr_size * self.config.n_epochs>=self.config.n_steps:
+                self.config.n_steps = tr_size * self.config.n_epochs
+            else:
+                self.config.set_n_epochs(len(self.data_processor.tr_dset))
+
+            print(
+                'ML Message: n_steps and n_epochs are given. Taking the '
+                'longer training time. n_steps: {}, n_epochs: {'
+                '}'.format(str(self.config.n_steps),
+                           str(self.config.n_epochs))
+            )
+
+
 
         # set up the practitioner's  validation interval and save steps
         if self.config.vl_interval is None and not self.config.n_saves is None:
