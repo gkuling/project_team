@@ -608,7 +608,8 @@ class Pad_to_Size_numpy(_TensorProcessing):
 
         temp = ipt[self.field_oi]
 
-        start = [np.ones(self.shape) * t.flatten()[0] for t in temp]
+        start = [np.ones(self.shape, dtype=t.dtype) * t.flatten()[0] for t in
+                 temp]
 
         for i in range(len(temp)):
             if len(scan_shape) == 3:
