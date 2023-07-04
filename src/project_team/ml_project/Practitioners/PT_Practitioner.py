@@ -9,7 +9,7 @@ from transformers import get_cosine_schedule_with_warmup
 import gc
 from tqdm import tqdm
 from project_team.dt_project.dt_processing import Add_Channel, \
-    MnStdNormalize_Numpy, AffineAugmentation, AddGaussainNoise
+    MnStdNormalize_Numpy, AffineAugmentation, AddGaussainNoise, ToTensor
 
 class PTPractitioner_config(project_config):
     def __init__(self,
@@ -207,7 +207,8 @@ class PT_Practitioner(object):
                 Add_Channel(field_oi='X'),
                 MnStdNormalize_Numpy(norm=list(self.config.normalization_channels),
                                      percentiles=self.config.normalization_percentiles,
-                                     field_oi='X')
+                                     field_oi='X'),
+                ToTensor(field_oi='X')
             ])
 
     def validate_model(self, val_dataloader):
