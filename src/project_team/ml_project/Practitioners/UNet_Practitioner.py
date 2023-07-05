@@ -179,7 +179,9 @@ class UNet_Practitioner(PT_Practitioner):
                 for ind, cm in enumerate(mcm):
                     tn, fp, fn, tp= cm.ravel()
                     dsc[int(lbls[ind])] = 2 * tp / (2 * tp + fp + fn)
-                if len(dsc)!=self.model.config.out_channels:
+                if len(dsc) != self.model.config.out_channels + 1 \
+                        if self.model.config.out_channels==1 else \
+                        self.model.config.out_channels:
                     print('ML Message: WARNING, a segmentation GT dosent have enough classes.')
                     continue
                 vl_lss.append(dsc)
