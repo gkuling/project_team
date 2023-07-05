@@ -504,11 +504,27 @@ class NumpyToSITK(_TensorProcessing):
                                      ipt[self.field_oi + '_SITKToNumpy_data'])
             ]
         elif self.field_oi=='pred_y':
-            ipt[self.field_oi] = [
-                self.set_all_image_data(img, data)
-                for img, data in zip(ipt[self.field_oi],
-                                     ipt['X_SITKToNumpy_data'])
-            ]
+            if len(ipt['X_SITKToNumpy_data'])==len(ipt[self.field_oi]):
+                ipt[self.field_oi] = [
+                    self.set_all_image_data(img, data)
+                    for img, data in zip(ipt[self.field_oi],
+                                         ipt['X_SITKToNumpy_data']
+                                         )
+                ]
+            elif len(ipt['X_SITKToNumpy_data'])==1 or \
+                    all(item==ipt['X_SITKToNumpy_data'] for item in ipt[
+                        'X_SITKToNumpy_data']):
+                ipt[self.field_oi] = [
+                    self.set_all_image_data(img, data)
+                    for img, data in zip(ipt[self.field_oi],
+                                         [ipt['X_SITKToNumpy_data'][0] for _ in
+                                          range(
+                                             len(ipt[self.field_oi]))]
+                                         )
+                ]
+            else:
+                raise Exception('This is a very stupid hack, I need to see '
+                                'more use cases where this fails? ')
         return ipt
 
 class Numpy_resize(_TensorProcessing):
