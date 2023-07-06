@@ -4,6 +4,7 @@ import SimpleITK as sitk
 from torchvision import transforms
 import pandas as pd
 from ..datasets import SITK_Dataset
+import inspect
 
 class SITK_Processor_config(DT_config):
     def __init__(self,
@@ -89,3 +90,115 @@ class SITK_Processor(_Processor):
             preload_data=self.config.pre_load,
             preload_transforms=transforms
         ))
+
+class SITK_Processor_Segmentation(SITK_Processor):
+    '''
+    a data processor to handle SITK data for segmentation
+    '''
+    def __init__(self, sitk_processor_config=SITK_Processor_config()):
+        '''
+        constructor
+        :param sitk_processor_config
+        '''
+        super(SITK_Processor_Segmentation, self).__init__(sitk_processor_config)
+        # dupicalte the transforms for y as well for training
+        self.duplicate_transforms_for('y')
+
+    def duplicate_transforms_for(self, new_field_oi):
+        '''
+        this will duplicate all the pre_transforms changing the field_oi to
+        the new name
+        :param new_field_oi: new desired field_oi
+        '''
+        # goup the transforms together
+        tr_groups = {}
+        for item in self.pre_transforms.transforms:
+            attribute = str(item.__class__)
+            if attribute in tr_groups:
+                tr_groups[attribute].append(item)
+            else:
+                tr_groups[attribute] = [item]
+
+        # for each individual type of transform, give it a new field_oi and
+        # put it into the sequence
+        for tr in tr_groups:
+            try:
+                # easiest is to do a deepcopy
+                new_tr = deepcopy(tr_groups[tr][0])
+                new_tr.field_oi = new_field_oi
+                tr_groups[tr].append(new_tr)
+            except:
+                # sometimes we can't deepcopy all attributes so we make a
+                # brand new version of that object
+                def get_input_args(obj):
+                    signature = inspect.signature(obj)
+                    return [param.name for param in
+                            signature.parameters.values()]
+
+                args = get_input_args(tr_groups[tr][0].__init__)
+
+                tr_groups[tr].append(
+                    tr_groups[tr][0].__class__(
+                        **{k: v if k != 'field_oi' else new_field_oi
+                           for k, v, in tr_groups[tr][0].__dict__.items()
+                           if k in args}
+                    )
+                )
+        self.pre_transforms = transforms.Compose(sum([value for key, value in
+                                                      tr_groups.items()], []))
+
+    def post_process_inference_results(self, list_of_results):
+        '''
+        run post processing on the list_of_results
+        :param list_of_results: results from the practitioner
+        :return:
+        '''
+        print('DT Message: Beginning Postprocessing of model prediction '
+              'results. ')
+        self.inference_results = []
+
+        # get the transforms of X
+        post_process = [tr for tr in self.pre_transforms.transforms
+                        if tr.field_oi == 'X']
+        # retrieve the reciprical of these transforms
+        post_process = [tr.get_reciprical(field_oi='pred_y') for tr in
+                        post_process if
+                        tr.get_reciprical() is not None]
+
+        post_process = transforms.Compose(post_process[::-1])
+
+        for ex in tqdm(list_of_results):
+            if post_process:
+                ex = post_process(ex)
+            self.inference_results.append(ex)
+
+    def transfer_dataset(self, input_data_list, dset_to_save):
+        '''
+        transfer in a a dataset from another processor
+        :param input_data_list: data to be brought in
+        :param dset_to_save: the name of the data set. This should be
+        tr_dset, vl_dset, or if_dset.
+        '''
+        print('DT Message: SITK_Processor moving data.')
+        if dset_to_save=='if_dset':
+            self.__setattr__(dset_to_save,
+                             SITK_Dataset(
+                                 preload_transforms=
+                                 transforms.Compose(
+                                     [tr for tr in self.pre_transforms.transforms
+                                      if tr.field_oi!='y']
+                                 )))
+        else:
+            self.__setattr__(dset_to_save,
+                             SITK_Dataset(preload_transforms=self.pre_transforms))
+
+        input_data_list = [{k if k != 'X_location'
+                            else 'X':v for k, v in d.items() }
+                           for d in input_data_list]
+        input_data_list = [{k if k != 'y_location'
+                            else 'y':v for k, v in d.items() }
+                           for d in input_data_list]
+
+        self.__getattribute__(dset_to_save).transfer_list(input_data_list)
+
+        print('DT Message: SITK_Processor finished moving Inference Results.')
