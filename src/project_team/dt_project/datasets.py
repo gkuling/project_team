@@ -13,7 +13,8 @@ class Project_Team_Dataset(Dataset):
                  data_df=pd.DataFrame([]),
                  preload_transforms=None,
                  transforms=None,
-                 preload_data=False):
+                 preload_data=False,
+                 filter_out_zero_X=True):
         '''
         :param data_df: dataframe of the data to be used
         :param preload_transforms: the transforms desired for once data has
@@ -28,6 +29,7 @@ class Project_Team_Dataset(Dataset):
         self.transforms = transforms
         self.preloaded = preload_data
         self.condition = None
+        self.filter_out_zero_X = filter_out_zero_X
 
         if preload_data:
             self.files_silo = []
@@ -65,7 +67,15 @@ class Project_Team_Dataset(Dataset):
                 pre_loaded_ex.update({key:value for key, value in post_loaded_ex.items()
                                       if key not in pre_loaded_ex.keys()})
                 # check the transformation should be kept
-                if self.keep_data_type_specific_function(post_loaded_ex):
+                if self.keep_data_type_specific_function(post_loaded_ex) and \
+                        self.filter_out_zero_X:
+                    for key in items_to_save:
+                        self.catalogue['save_name_' + str(cnt)] = cnt
+                        self.files_silo.append(post_loaded_ex[key])
+                        pre_loaded_ex[key] = 'save_name_' + str(cnt)
+                        cnt+=1
+                    new_dfiles.append(pre_loaded_ex)
+                elif not self.filter_out_zero_X:
                     for key in items_to_save:
                         self.catalogue['save_name_' + str(cnt)] = cnt
                         self.files_silo.append(post_loaded_ex[key])
@@ -200,8 +210,9 @@ class Images_Dataset(Project_Team_Dataset):
     A dataset that is designated to handling imaging files
     '''
     def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None,
-                 transforms=None, preload_data=False):
-        super(Images_Dataset, self).__init__(data_df, preload_transforms, transforms, preload_data)
+                 transforms=None, preload_data=False, filter_out_zero_X=True):
+        super(Images_Dataset, self).__init__(data_df, preload_transforms,
+                                             transforms, preload_data, filter_out_zero_X)
 
     def keep_data_type_specific_function(self, processed_x):
         '''
@@ -217,10 +228,10 @@ class Text_Dataset(Project_Team_Dataset):
     A dataset that is designated to handling text files
     '''
     def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None,
-                 transforms=None, preload_data=False):
+                 transforms=None, preload_data=False, filter_out_zero_X=True):
         super(Text_Dataset, self).__init__(data_df, preload_transforms,
                                         transforms,
-                           preload_data)
+                           preload_data, filter_out_zero_X)
 
     def keep_data_type_specific_function(self, processed_x):
         # Checking that the entire input_data of the model is not 0.0
@@ -231,8 +242,9 @@ class SITK_Dataset(Images_Dataset):
     A dataset that is designated to handling SimpleITK imaging files
     '''
     def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None, transforms=None,
-                 preload_data=False):
+                 preload_data=False, filter_out_zero_X=True):
         super(SITK_Dataset, self).__init__(data_df,
                                            preload_transforms,
                                            transforms,
-                                           preload_data)
+                                           preload_data,
+                                           filter_out_zero_X)

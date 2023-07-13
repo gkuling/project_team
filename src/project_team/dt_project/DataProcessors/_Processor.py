@@ -7,6 +7,7 @@ from project_team.project_config import project_config
 class DT_config(project_config):
     def __init__(self,
                  pre_load=True,
+                 filter_out_zero_X=True,
                  **kwargs
                  ):
         '''
@@ -17,6 +18,7 @@ class DT_config(project_config):
         '''
         super(DT_config, self).__init__('DT')
         self.pre_load = pre_load
+        self.filter_out_zero_X = filter_out_zero_X
 
 class _Processor(object):
     '''

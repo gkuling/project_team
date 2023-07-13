@@ -78,5 +78,6 @@ class Image_Processor(_Processor):
         setattr(self, name, Images_Dataset(
             data,
             preload_data=self.config.pre_load,
-            preload_transforms=transforms
+            preload_transforms=transforms,
+            filter_out_zero_X=self.config.filter_out_zero_X
         ))

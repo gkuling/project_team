@@ -5,6 +5,7 @@ from torchvision import transforms
 import pandas as pd
 from ..datasets import SITK_Dataset
 import inspect
+from tqdm import tqdm
 
 class SITK_Processor_config(DT_config):
     def __init__(self,
@@ -88,7 +89,8 @@ class SITK_Processor(_Processor):
         setattr(self, name, SITK_Dataset(
             data,
             preload_data=self.config.pre_load,
-            preload_transforms=transforms
+            preload_transforms=transforms,
+            filter_out_zero_X=self.config.filter_out_zero_X
         ))
 
 class SITK_Processor_Segmentation(SITK_Processor):

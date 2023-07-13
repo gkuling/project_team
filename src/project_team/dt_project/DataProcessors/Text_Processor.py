@@ -3,6 +3,7 @@ from torchvision import transforms
 
 from ..datasets import Text_Dataset
 from ._Processor import _Processor, DT_config
+from ..dt_processing.nlp import *
 
 class Text_Processor_config(DT_config):
     '''
@@ -57,5 +58,6 @@ class Text_Processor(_Processor):
         setattr(self, name, Text_Dataset(
             data,
             preload_data=self.config.pre_load,
-            preload_transforms=transforms
+            preload_transforms=transforms,
+            filter_out_zero_X=self.config.filter_out_zero_X
         ))
