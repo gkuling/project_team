@@ -27,7 +27,7 @@ class Image_Processor_config(DT_config):
         :param one_hot_encode: boolean on whether to one hot encode the y label
         :param max_classes: the amount of labeled classes for the task
         '''
-        super(Image_Processor_config, self).__init__(pre_load)
+        super(Image_Processor_config, self).__init__(pre_load, **kwargs)
         self.silo_dtype=silo_dtype
         self.numpy_shape=numpy_shape
         self.pad_shape = pad_shape

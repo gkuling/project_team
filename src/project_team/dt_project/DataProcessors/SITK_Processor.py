@@ -32,7 +32,7 @@ class SITK_Processor_config(DT_config):
         :param z_centering: same as x_centering but in z dimension.
         :param resample_shape: bool. indicator to resample by shape
         '''
-        super(SITK_Processor_config, self).__init__(pre_load)
+        super(SITK_Processor_config, self).__init__(pre_load, **kwargs)
         self.spacing=spacing
         self.silo_dtype=silo_dtype
         self.numpy_shape=numpy_shape

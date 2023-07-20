@@ -67,15 +67,14 @@ class Project_Team_Dataset(Dataset):
                 pre_loaded_ex.update({key:value for key, value in post_loaded_ex.items()
                                       if key not in pre_loaded_ex.keys()})
                 # check the transformation should be kept
-                if self.keep_data_type_specific_function(post_loaded_ex) and \
-                        self.filter_out_zero_X:
+                if not self.filter_out_zero_X:
                     for key in items_to_save:
                         self.catalogue['save_name_' + str(cnt)] = cnt
                         self.files_silo.append(post_loaded_ex[key])
                         pre_loaded_ex[key] = 'save_name_' + str(cnt)
-                        cnt+=1
+                        cnt += 1
                     new_dfiles.append(pre_loaded_ex)
-                elif not self.filter_out_zero_X:
+                elif self.keep_data_type_specific_function(post_loaded_ex):
                     for key in items_to_save:
                         self.catalogue['save_name_' + str(cnt)] = cnt
                         self.files_silo.append(post_loaded_ex[key])
