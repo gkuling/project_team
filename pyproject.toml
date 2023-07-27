@@ -16,6 +16,7 @@ target-version = ['py311']
 [project]
 name="project_team"
 version="0.1.0"
+description-file='README.md'
 #authors=[
 #    {name="Grey Kuling"},
 #]
