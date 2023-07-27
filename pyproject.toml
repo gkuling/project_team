@@ -13,21 +13,21 @@ target-version = ['py311']
 #requires = ["setuptools>=61.0"]
 #build-backend = "setuptools.build_meta"
 #
-#[project]
-#name="project_team"
-#version="0.1.0"
-#authors=[
-#    {name="Grey Kuling"},
-#]
-#license={text="BSD 3-Clause"}
-#description="Stuff"
-#readme="README.md"
-#requires-python=">=3.7"
-#dynamic = ["dependencies"]
-#keywords=[
-#    "medical-imaging",
-#]
-#
+[project]
+name="project_team"
+version="0.1.0"
+authors=[
+    {name="Grey Kuling"},
+]
+license={text="BSD 3-Clause"}
+description="Stuff"
+readme="README.md"
+requires-python=">=3.7"
+dynamic = ["dependencies"]
+keywords=[
+    "medical-imaging",
+]
+
 [tool.setuptools]
 packages = ["project_team"]
 #
