@@ -11,7 +11,7 @@
 
 This is a package to organize, execute, and persist machine learning and applied statistical models. 
 
-<p align="center"> <img src="./img/Framework_Diagram.PNG"  width="450" height="450">
+[//]: # (<p align="center"> <img src="./img/Framework_Diagram.PNG"  width="450" height="450">)
 
 The frame work is built of three main objects, an IO Manager, a Data Processor and a Statistical Practitioner:
 
@@ -26,7 +26,8 @@ Between the three objects there are three key operations between two objects.
 - Designing: developing and deploying a given statistical model that can have a persistent set up. The manager tells the PRactitioner where files are located and the Pracitioner checks requirements and loads data. 
 
 ### Table of Contents
-**[Configurations](##configurations)**<br>
+
+[//]: # (**[Configurations]&#40;#configurations&#41;**<br>)
 **[IO Managers](#io-managers)**<br>
 **[Data Processors](#data-processors)**<br>
 **[Statistical Practitioners](#statistical-practitioners)**<br>
@@ -37,13 +38,13 @@ The currency of this framework is a configuration file. These objects take dicti
 
 <em>An Example of a practitioner configuration that is specialized in using pytorch models. </em> 
 
-<p align="left"> <img src="./img/PTPractitioner_config.png" height="450" >
+[//]: # (<p align="left"> <img src="./img/PTPractitioner_config.png" height="450" >)
 
 These config files save as txt dictionary files and can easily be manually edited in notepad. These items are light weight and can give objects flexibilty to change when a donfig is loaded. 
 
 <em>An Example of a saved UNet model configuration. We can see a very well organized dictionary saved as a text file, where individual parameters could be edited manually and the alterations would be implemented when it is reloaded.  </em> 
 
-<p align="left"> <img src="./img/SAved_UNet_Config.png" height="450" >
+[//]: # (<p align="left"> <img src="./img/SAved_UNet_Config.png" height="450" >)
 
 This object is largely inspired by the *transformers* package from huggingface. (https://huggingface.co/transformers)
 
