@@ -21,7 +21,7 @@ version="0.1.0"
 #]
 #license={text="BSD 3-Clause"}
 #description="Stuff"
-readme=""
+#readme="README.md"
 #requires-python=">=3.7"
 #dynamic = ["dependencies"]
 #keywords=[
