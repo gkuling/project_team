@@ -44,10 +44,10 @@ jobs:
         verbose: true
         skip_existing: true
 
-    # Publish only tagged commits
-    - name: Publish package to PyPI, if tagged
-      if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        verbose: true
+#    # Publish only tagged commits
+#    - name: Publish package to PyPI, if tagged
+#      if: startsWith(github.ref, 'refs/tags')
+#      uses: pypa/gh-action-pypi-publish@release/v1
+#      with:
+#        password: ${{ secrets.PYPI_API_TOKEN }}
+#        verbose: true
