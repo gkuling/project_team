@@ -4,6 +4,9 @@ name: Publish
 
 on: push
 
+permissions:
+  id-token: write
+
 jobs:
   Build-and-publish:
     name: Build and publish if needed
