@@ -38,8 +38,8 @@ jobs:
     - name: Publish package to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        user: __token_project_team__
-        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        user: gkuling
+        password: ${{ secrets.TEST_PYPI_PASSWORD }}
         repository_url: https://test.pypi.org/legacy/
         verbose: true
         skip_existing: true
