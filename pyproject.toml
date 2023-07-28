@@ -13,10 +13,11 @@ target-version = ['py311']
 #requires = ["setuptools>=61.0"]
 #build-backend = "setuptools.build_meta"
 #
-[project]
-name="project_team"
-version="0.1.0"
-readme=""
+#[project]
+#name="project_team"
+#version="0.1.0"
+#readme="README.md"
+#description-file="README.md"
 #authors=[
 #    {name="Grey Kuling"},
 #]

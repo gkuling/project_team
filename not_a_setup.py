@@ -9,5 +9,6 @@ setup(
     license='',
     author='Grey Kuling',
     author_email='gkuling@gmail.com',
-    description=''
+    description='',
+    long_description="foo bar baz"
 )
