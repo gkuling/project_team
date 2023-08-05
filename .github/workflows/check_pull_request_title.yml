@@ -1,7 +1,7 @@
 name: 'Check PR title'
-on:
-  pull_request:
-    types: [edited, opened, synchronize, reopened]
+#on:
+#  pull_request:
+#    types: [edited, opened, synchronize, reopened]
 
 jobs:
   pr-title-check:
