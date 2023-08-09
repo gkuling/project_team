@@ -14,7 +14,7 @@ class io_hptuning_config(io_config):
     Configuration for a hyperparameter tuning experiment
     '''
     def __init__(self, data_csv_location, technique, training_portion,
-                 criterion= 'ACC', iterations=1,
+                 criterion= 'ACC', iterations=1, penultimate=None,
                  **kwargs):
         '''
         :param data_csv_location: data set dsv file or dataframe containing
@@ -38,6 +38,7 @@ class io_hptuning_config(io_config):
         self.training_portion = training_portion
         self.criterion = criterion
         self.iterations = iterations
+        self.penultimate = penultimate
 
 class _HyperParameterTuning(_Statistical_Project):
     '''
