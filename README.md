@@ -77,3 +77,9 @@ a Statistical Practitioner performs all machine learning algorithms, and statist
 * `ROCAnalysis_Practitioner`: this will calculate ROCAUC and print and ROC curve for two columns in a dataframe. 
 
 To come: `PTSegmentation_Practitioner` that can handle the tasks of segmentatin, and `Transformers_Practitioner` that can handle tasks specific to the hugging face transformers package 
+
+## Strange things to note 
+
+These only use model states and does not ever save and load a whole model. If you model doesn't have 'items' attribute, then you saved in wrong. 
+
+Resave it as a model state and then laod it. 
