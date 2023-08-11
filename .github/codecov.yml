@@ -1,6 +1,0 @@
-coverage:
-  status:
-    project: false
-
-ignore:
-  - "setup_old.py"
