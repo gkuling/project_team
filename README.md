@@ -2,6 +2,16 @@
 
 ## Installation
 
+The original package is hosted on test.pypi.org. To install the package, run the following command:
+
+``` pip install -i https://test.pypi.org/simple/ project-team ``` 
+
+Note: The pip installation does not install the requirements. To install the requirements, download the `requirements.txt` file and run the following command:
+
+``` pip install -r requirements.txt ```
+
+Alternatively you can install the package from the source code. To do so, follow the steps below:
+
 1. Download this project and move current working directory to this project 
 2. Run `python setup.py install`
 3. Run `pip install -r requirements.py`
@@ -23,7 +33,7 @@ Between the three objects there are three key operations between two objects.
 
 - Transfering: includes loading data to be used by the processor and saving results that have been post processed.
 - Processing: transforming input data to the proper space to be used by the practitioner, and transfering inference results from the statistical process. 
-- Designing: developing and deploying a given statistical model that can have a persistent set up. The manager tells the PRactitioner where files are located and the Pracitioner checks requirements and loads data. 
+- Designing: developing and deploying a given statistical model that can have a persistent setup. The manager tells the PRactitioner where files are located and the Pracitioner checks requirements and loads data. 
 
 ### Table of Contents
 
@@ -82,4 +92,4 @@ To come: `PTSegmentation_Practitioner` that can handle the tasks of segmentatin,
 
 These only use model states and does not ever save and load a whole model. If you model doesn't have 'items' attribute, then you saved in wrong. 
 
-Resave it as a model state and then laod it. 
+Resave it as a model state and then load it. 
