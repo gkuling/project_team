@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='project_team',
-    version='0.1.4',
+    version='0.1.5',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     url='',
