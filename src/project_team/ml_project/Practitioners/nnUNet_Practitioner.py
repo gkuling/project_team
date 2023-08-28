@@ -32,7 +32,7 @@ class nnUNet_Practitioner():
     def __init__(self,
                  io_manager,
                  dt_processor,
-                 practitioner_config=nnUNet_Practitioner_config()):
+                 practitioner_config):
         self.io_manager = io_manager
         self.dt_processor = dt_processor
         self.config = practitioner_config
