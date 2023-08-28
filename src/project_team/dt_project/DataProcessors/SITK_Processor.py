@@ -204,3 +204,114 @@ class SITK_Processor_Segmentation(SITK_Processor):
         self.__getattribute__(dset_to_save).transfer_list(input_data_list)
 
         print('DT Message: SITK_Processor finished moving Inference Results.')
+
+class nnUNetSITK_Processor(SITK_Processor_Segmentation):
+    def __init__(self,
+                 save_folder,
+                 sitk_processor_config=SITK_Processor_config()
+                 ):
+        super(nnUNetSITK_Processor, self).__init__(sitk_processor_config)
+        self.save_folder = save_folder
+        transforms = [
+            OpenSITK_file(field_oi='X'),
+            nnUNet_SaveSITK_file(field_oi='X',
+                          save_folder=os.path.join(
+                              save_folder,
+                              'nnunetv2_raw',
+                              'Dataset001_Current',
+                              'imagesTr'
+                          )
+                          ),
+            OpenSITK_file(field_oi='y'),
+            nnUNet_SaveSITK_file(field_oi='y',
+                          save_folder=os.path.join(
+                              save_folder,
+                              'nnunetv2_raw',
+                              'Dataset001_Current',
+                              'labelsTr'
+                          )
+                          ),
+        ]
+        self.set_pretransforms(transforms)
+
+    def set_dataset(self, csv_location, set_name, pre_process_y=False):
+        '''
+        set a dataset of a specific name, has to custom inorder to build the
+        proper folders for nnUNetV2
+        :param csv_location: csv location of the data or a dataframe
+        :param set_name: the name of the set to be loaded
+        :param pre_process_y: boolean on whther to preprocess y label or not
+        '''
+        assert type(set_name) == str
+        if set_name == 'if_dset':
+            pr_name = 'inference'
+        elif set_name=='vl_dset':
+            pr_name='validation'
+        elif set_name=='tr_dset':
+            pr_name='training'
+        else:
+            pr_name = set_name
+
+        print('DT message: Setting up the {} dataset. '.format(pr_name))
+
+        if type(csv_location) == pd.DataFrame:
+            pass
+        else:
+            if not os.path.exists(
+                    os.path.join(csv_location, '{}.csv'.format(set_name))
+            ):
+                raise FileExistsError(
+                    csv_location + ' does not contain a {}.csv '.format(
+                        set_name))
+            csv_location = pd.read_csv(
+                os.path.join(csv_location, '{}.csv'.format(set_name)),
+                na_filter=False
+            )
+        if set_name=='if_dset':
+            # if loading an inference set, the preprocessing may not need to
+            # be done for the y label, if there is no y label for these
+            # examples.
+            # split the transforms if there is no need to pre_process_y
+            if not pre_process_y:
+                pre_transforms = [
+                    OpenSITK_file(field_oi='X'),
+                    nnUNet_SaveSITK_file(field_oi='X',
+                                  save_folder=os.path.join(
+                                      self.save_folder,
+                                      'nnunetv2_raw',
+                                      'Dataset001_Current',
+                                      'imagesTs'
+                                  )
+                                  )
+                ]
+            else:
+                pre_transforms = [
+                    OpenSITK_file(field_oi='X'),
+                    nnUNet_SaveSITK_file(field_oi='X',
+                                  save_folder=os.path.join(
+                                      self.save_folder,
+                                      'nnunetv2_raw',
+                                      'Dataset001_Current',
+                                      'imagesTs'
+                                  )
+                                  ),
+                    OpenSITK_file(field_oi='y'),
+                    nnUNet_SaveSITK_file(field_oi='y',
+                                  save_folder=os.path.join(
+                                      self.save_folder,
+                                      'nnunetv2_raw',
+                                      'Dataset001_Current',
+                                      'labelsTs'
+                                  )
+                                  ),
+                ]
+
+            pre_transforms = transforms.Compose(pre_transforms)
+        else:
+            pre_transforms = self.pre_transforms
+
+        # build processor_dataset
+        self.get_dataset(csv_location, set_name, pre_transforms)
+        # pre_load the data
+        if self.config.pre_load:
+            getattr(getattr(self, set_name), 'perform_preload').__call__()

@@ -15,7 +15,7 @@ import argparse
 import pandas as pd
 from torchvision import datasets
 
-import ml_project
+from project_team import ml_project
 import project_team as proteam
 import os
 

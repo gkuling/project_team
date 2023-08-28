@@ -75,6 +75,31 @@ class OpenSITK_file(_TensorProcessing):
             # reutrn the SimpleITK Images in a list
         return ipt
 
+class nnUNet_SaveSITK_file(_TensorProcessing):
+    def __init__(self,
+                 save_folder,
+                 field_oi='X',
+                 save_message='proteam'):
+        super(nnUNet_SaveSITK_file, self).__init__()
+        self.field_oi = field_oi
+        self.save_folder = save_folder
+        self.save_message = save_message
+
+    def __call__(self, sample):
+        if not os.path.exists(self.save_folder):
+            os.makedirs(self.save_folder)
+        file_num = len(os.listdir(self.save_folder))
+        save_name = os.path.join(self.save_folder,
+                                     self.save_message +
+                                     '_' +
+                                     str(file_num).zfill(4) +
+                                 ('_0000.nii.gz' if self.field_oi=='X'
+                                     else '.nii.gz'))
+        sitk.WriteImage(sample[self.field_oi][0],
+                        save_name)
+        sample[self.field_oi] = save_name
+        return sample
+
 class Resample_Image_shape(_TensorProcessing):
     '''
     Resample a PIL Image based on the dimension of the image
