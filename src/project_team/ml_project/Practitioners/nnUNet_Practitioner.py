@@ -9,14 +9,14 @@ import shutil
 from copy import deepcopy
 
 import torch
-from typing import Tuple, Union, List
+from typing import Tuple, List
 
-from project_team.ml_project import PTPractitioner_config
+from .PT_Practitioner import PTPractitioner_config
 import torch.cuda
 import os
 import torch.multiprocessing as mp
 from torch.backends import cudnn
-from typing import Union, Optional
+from typing import Union
 
 class nnUNet_Practitioner_config(PTPractitioner_config):
     def __init__(self,
