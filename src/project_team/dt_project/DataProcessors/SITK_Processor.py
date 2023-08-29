@@ -90,7 +90,8 @@ class SITK_Processor(_Processor):
             data,
             preload_data=self.config.pre_load,
             preload_transforms=transforms,
-            filter_out_zero_X=self.config.filter_out_zero_X
+            filter_out_zero_X=self.config.filter_out_zero_X,
+            debug_pretransform=self.config.debug_pretransform
         ))
 
 class SITK_Processor_Segmentation(SITK_Processor):
@@ -189,10 +190,13 @@ class SITK_Processor_Segmentation(SITK_Processor):
                                  transforms.Compose(
                                      [tr for tr in self.pre_transforms.transforms
                                       if tr.field_oi!='y']
-                                 )))
+                                 ),
+                                 debug_pretransform=self.config.debug_pretransform
+                            ))
         else:
             self.__setattr__(dset_to_save,
-                             SITK_Dataset(preload_transforms=self.pre_transforms))
+                             SITK_Dataset(preload_transforms=self.pre_transforms,
+                                 debug_pretransform=self.config.debug_pretransform))
 
         input_data_list = [{k if k != 'X_location'
                             else 'X':v for k, v in d.items() }

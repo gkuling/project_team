@@ -8,6 +8,7 @@ class DT_config(project_config):
     def __init__(self,
                  pre_load=True,
                  filter_out_zero_X=True,
+                 debug_pretransform=False,
                  **kwargs
                  ):
         '''
@@ -19,6 +20,7 @@ class DT_config(project_config):
         super(DT_config, self).__init__('DT')
         self.pre_load = pre_load
         self.filter_out_zero_X = filter_out_zero_X
+        self.debug_pretransform = debug_pretransform
 
 class _Processor(object):
     '''

@@ -59,5 +59,6 @@ class Text_Processor(_Processor):
             data,
             preload_data=self.config.pre_load,
             preload_transforms=transforms,
-            filter_out_zero_X=self.config.filter_out_zero_X
+            filter_out_zero_X=self.config.filter_out_zero_X,
+            debug_pretransform=self.config.debug_pretransform
         ))

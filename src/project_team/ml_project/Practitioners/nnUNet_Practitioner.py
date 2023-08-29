@@ -17,6 +17,7 @@ import os
 import torch.multiprocessing as mp
 from torch.backends import cudnn
 from typing import Union
+import SimpleITK as sitk
 
 class nnUNet_Practitioner_config(PTPractitioner_config):
     def __init__(self,
@@ -237,7 +238,7 @@ class nnUNet_Practitioner():
         print('ML Message: nnUNetv2 inference beginning.')
         print('ML Message: turning over printout to nnUNetv2.')
 
-        self.predict_from_raw_data(
+        self.dt_processor.inference_results = self.predict_from_raw_data(
             os.path.join(self.io_manager.root,
                          'nnunetv2_raw','Dataset001_Current','imagesTs'),
             os.path.join(self.io_manager.root,
@@ -257,27 +258,6 @@ class nnUNet_Practitioner():
             checkpoint_name='checkpoint_final.pth',
             num_processes_preprocessing=1,
             num_processes_segmentation_export=1)
-        print('ML Message: nnUNetv2 inference finished.')
-        inf_results = []
-        for _ in range(len(self.dt_processor.if_dset)):
-            example = deepcopy(self.dt_processor.if_dset.dfiles[_])
-            shutil.move(
-                os.path.join(
-                    self.io_manager.root,
-                     'nnunetv2_raw', 'Dataset001_Current',
-                     'imagesTs_predlowres',
-                     'proteam_' + str(_).zfill(4) + '.nii.gz'),
-                    example['X_location'][
-                             0].replace('.nii.gz', '_' +
-                                        self.io_manager.config.experiment_name
-                                        + '.nii.gz')
-            )
-            example['pred_y'] = example['X_location'][
-                             0].replace('.nii.gz', '_' +
-                                        self.io_manager.config.experiment_name
-                                        + '.nii.gz')
-            inf_results.append(example)
-        self.dt_processor.inference_results = inf_results
         torch.cuda.empty_cache()
         gc.collect()
         print("ML Message: Finished Running nnUNetV2 Segmentation")
@@ -410,8 +390,6 @@ class nnUNet_Practitioner():
                                 output_filename_truncated, plans_manager,
                                 dataset_json,
                                 configuration_manager, num_processes)
-        # mta = MultiThreadedAugmenter(ppa, NumpyToTensor(), num_processes, 1,
-        #                              None, pin_memory=device.type == 'cuda')
         mta = SingleThreadedAugmenter(ppa, NumpyToTensor())
 
         # precompute gaussian
@@ -428,7 +406,8 @@ class nnUNet_Practitioner():
 
         r = []
         with torch.no_grad():
-            for preprocessed in mta:
+            for ex_i, preprocessed in enumerate(mta):
+                processor_data = self.dt_processor.if_dset.__getitem__(ex_i)
                 data = preprocessed['data']
                 if isinstance(data, str):
                     delfile = data
@@ -517,16 +496,17 @@ class nnUNet_Practitioner():
                 prediction = prediction.to('cpu').numpy()
                 print(
                     'sending off prediction to background worker for resampling and export')
+                export_prediction_from_softmax(prediction,
+                                               properties,
+                                               configuration_manager,
+                                               plans_manager,
+                                               dataset_json,
+                                               ofile,
+                                               save_probabilities)
+                processor_data.update({'pred_y': [sitk.ReadImage(
+                    ofile+'.nii.gz')]})
                 r.append(
-                    # export_pool.starmap_async(
-                        export_prediction_from_softmax(prediction,
-                                                          properties,
-                                                          configuration_manager,
-                                                          plans_manager,
-                                                          dataset_json,
-                                                          ofile,
-                                                          save_probabilities)
-                    # )
+                    processor_data
                 )
                 print(f'done with {os.path.basename(ofile)}')
 
@@ -535,3 +515,4 @@ class nnUNet_Practitioner():
                     join(output_folder, 'dataset.json'))
         shutil.copy(join(model_training_output_dir, 'plans.json'),
                     join(output_folder, 'plans.json'))
+        return r

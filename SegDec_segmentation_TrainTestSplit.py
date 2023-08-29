@@ -9,7 +9,8 @@ import numpy as np
 import project_team as proteam
 import os
 from project_team.dt_project.DataProcessors.SITK_Processor import nnUNetSITK_Processor
-from project_team.ml_project.Practitioners.nnUNet_Practitioner import nnUNet_Practitioner
+from project_team.ml_project.Practitioners.nnUNet_Practitioner import (
+    nnUNet_Practitioner, nnUNet_Practitioner_config)
 
 r_seed = 20230824
 parser = argparse.ArgumentParser(description='nnUNet Segmentation Example')
@@ -23,6 +24,13 @@ dataset_file = os.path.join(opt.working_dir,
                                    'decathalon',
                                    'segmentation_dataset.csv')
 
+import shutil
+shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                           'nnunetv2_raw', 'Dataset001_Current',
+                           'imagesTs'))
+shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                           'nnunetv2_raw', 'Dataset001_Current',
+                           'imagesTs_predlowres'))
 # Prepare data if not already saved and set up
 if not os.path.exists(dataset_file):
 
@@ -79,7 +87,7 @@ processor = nnUNetSITK_Processor(
 )
 
 # Prepare Practitioner
-ml_project_cnfg = proteam.ml_project.PTPractitioner_config(
+ml_project_cnfg = proteam.ml_project.nnUNet_Practitioner_config(
     **{
         'n_epochs': 1,
         'labels': {
@@ -104,9 +112,9 @@ practitioner = nnUNet_Practitioner(
 manager.prepare_for_experiment()
 
 
-processor.set_training_data(manager.root)
-
-practitioner.train_model()
+# processor.set_training_data(manager.root)
+#
+# practitioner.train_model()
 
 # PErform Inference
 
@@ -132,8 +140,7 @@ eval_cfg = SegEval_Practitioner_config(**eval_args)
 eval_cfg.save_folder = manager.root
 evaluator = SegEval3D_Practitioner(
     eval_cfg,
-    pred_preprocess=[dt_project.OpenSITK_file(field_oi='pred_y'),
-                     dt_project.SITKToNumpy(field_oi='pred_y')],
+    pred_preprocess=[dt_project.SITKToNumpy(field_oi='pred_y')],
     gt_preprocess=[dt_project.OpenSITK_file(field_oi='y'),
                    dt_project.SITKToNumpy(field_oi='y')]
 )

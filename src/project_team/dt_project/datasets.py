@@ -14,7 +14,8 @@ class Project_Team_Dataset(Dataset):
                  preload_transforms=None,
                  transforms=None,
                  preload_data=False,
-                 filter_out_zero_X=True):
+                 filter_out_zero_X=True,
+                 debug_pretransform=False):
         '''
         :param data_df: dataframe of the data to be used
         :param preload_transforms: the transforms desired for once data has
@@ -30,6 +31,7 @@ class Project_Team_Dataset(Dataset):
         self.preloaded = preload_data
         self.condition = None
         self.filter_out_zero_X = filter_out_zero_X
+        self.debug_pretransform = debug_pretransform
 
         if preload_data:
             self.files_silo = []
@@ -87,11 +89,14 @@ class Project_Team_Dataset(Dataset):
                           ' Message: Warning an example has an input of all '
                           'zeros. Example at line '
                           + str(item) + ' of the current dataset. ')
-            except:
-                print(self.__str__().split(' ')[0].split('.')[-1] +
-                      ' Message: Warning an example has failed the preloading '
-                      'transforms. Example at line ' + str(item) +
-                      ' of the current dataset. ')
+            except Exception as e:
+                if self.debug_pretransform:
+                    raise e
+                else:
+                    print(self.__str__().split(' ')[0].split('.')[-1] +
+                          ' Message: Warning an example has failed the '
+                          'preloading transforms. Example at line ' +
+                          str(item) + ' of the current dataset. ')
         self.dfiles = new_dfiles
 
     def keep_data_type_specific_function(self,x):
@@ -209,9 +214,11 @@ class Images_Dataset(Project_Team_Dataset):
     A dataset that is designated to handling imaging files
     '''
     def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None,
-                 transforms=None, preload_data=False, filter_out_zero_X=True):
+                 transforms=None, preload_data=False, filter_out_zero_X=True,
+                 debug_pretransform=False):
         super(Images_Dataset, self).__init__(data_df, preload_transforms,
-                                             transforms, preload_data, filter_out_zero_X)
+                                             transforms, preload_data, filter_out_zero_X,
+                                             debug_pretransform)
 
     def keep_data_type_specific_function(self, processed_x):
         '''
@@ -227,10 +234,12 @@ class Text_Dataset(Project_Team_Dataset):
     A dataset that is designated to handling text files
     '''
     def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None,
-                 transforms=None, preload_data=False, filter_out_zero_X=True):
+                 transforms=None, preload_data=False, filter_out_zero_X=True,
+                 debug_pretransform=False):
         super(Text_Dataset, self).__init__(data_df, preload_transforms,
                                         transforms,
-                           preload_data, filter_out_zero_X)
+                           preload_data, filter_out_zero_X,
+                                           debug_pretransform)
 
     def keep_data_type_specific_function(self, processed_x):
         # Checking that the entire input_data of the model is not 0.0
@@ -241,9 +250,10 @@ class SITK_Dataset(Images_Dataset):
     A dataset that is designated to handling SimpleITK imaging files
     '''
     def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None, transforms=None,
-                 preload_data=False, filter_out_zero_X=True):
+                 preload_data=False, filter_out_zero_X=True, debug_pretransform=False):
         super(SITK_Dataset, self).__init__(data_df,
                                            preload_transforms,
                                            transforms,
                                            preload_data,
-                                           filter_out_zero_X)
+                                           filter_out_zero_X,
+                                           debug_pretransform)
