@@ -101,7 +101,7 @@ class nnUNet_Practitioner():
 
 
         # manage default np
-        default_np = {"2d": 1, "3d_fullres": 1, "3d_lowres": 1}
+        default_np = {"2d": 8, "3d_fullres": 4, "3d_lowres": 8}
         np = [default_np[c] if c in default_np.keys() else 4 for c in
               [self.config.nnunet_configuration]]
 

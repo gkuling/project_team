@@ -1,5 +1,5 @@
 
-__version__ = "0.1.9"
+__version__ = "0.1.10"
 
 import io
 import contextlib
@@ -9,13 +9,3 @@ from . import io_project
 from . import ml_project
 from .ml_project import models
 
-
-# Not sure if this function is doing anything???
-def maketabbed(ml_project):
-    def tabbed():
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            ml_project
-        for line in output.getvalue().splitlines():
-            print('\t' + line)
-    return tabbed
