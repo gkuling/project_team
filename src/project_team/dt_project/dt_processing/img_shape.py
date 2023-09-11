@@ -737,8 +737,7 @@ class ToTensor(_TensorProcessing):
                 for ky in ipt[self.field_oi].keys()
             }
         else:
-            ipt[self.field_oi] = torch.tensor(np.array(ipt[self.field_oi],
-                                                       dtype=self.dtype),
+            ipt[self.field_oi] = torch.tensor(np.array(ipt[self.field_oi]),
                                               dtype=self.dtype)
         return ipt
 
