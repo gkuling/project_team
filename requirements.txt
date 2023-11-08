@@ -13,3 +13,4 @@ tokenizers==0.13.0
 matplotlib==3.7.3
 statsmodels==0.14.0
 nltk==3.8.1
+chardet==4.0.0
