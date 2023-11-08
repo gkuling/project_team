@@ -2,6 +2,8 @@
 
 ## Installation
 
+This project is originally programmed for Python 3.9 
+
 The original package is hosted on test.pypi.org. To install the package, run the following command:
 
 ``` pip install -i https://test.pypi.org/simple/ project-team ``` 
