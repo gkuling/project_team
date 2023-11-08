@@ -59,6 +59,11 @@ class Project_Team_Dataset(Dataset):
                     self.preload_transforms(
                         deepcopy(pre_loaded_ex)
                     )
+                # Take a dataset fingerprint if it is appropriate
+                if hasattr(self,'dataset_fingerprint'):
+                    self.dataset_fingerprint.update(pre_loaded_ex,
+                                                    post_loaded_ex)
+
                 # determine the items that will need to be stored in the
                 # files_silo if it is not a Primitive data type or it isn't
                 # the same as it was prior to transformation it will be stored.
@@ -219,6 +224,7 @@ class Images_Dataset(Project_Team_Dataset):
         super(Images_Dataset, self).__init__(data_df, preload_transforms,
                                              transforms, preload_data, filter_out_zero_X,
                                              debug_pretransform)
+        self.dataset_fingerprint = Dataset_Fingerprint()
 
     def keep_data_type_specific_function(self, processed_x):
         '''
@@ -257,3 +263,11 @@ class SITK_Dataset(Images_Dataset):
                                            preload_data,
                                            filter_out_zero_X,
                                            debug_pretransform)
+        self.dataset_fingerprint = Dataset_Fingerprint()
+
+class Dataset_Fingerprint():
+    def __init__(self):
+        pass
+
+    def update(self, preload, postload):
+        print('')
