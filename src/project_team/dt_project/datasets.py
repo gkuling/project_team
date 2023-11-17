@@ -291,17 +291,17 @@ class Dataset_Fingerprint():
         return_result = {}
         if type(item)==np.ndarray:
             return_result['shape'] = item.shape
-            return_result['mean'] = item.mean()
-            return_result['std'] = item.std()
-            return_result['min'] = item.min()
-            return_result['max'] = item.max()
-            return_result['median'] = np.median(item)
-            return_result['99_5percentile'] = np.percentile(item, 99.5)
-            return_result['0_5percentile'] = np.percentile(item, 0.5)
-            return_result['99percentile'] = np.percentile(item, 99)
-            return_result['1percentile'] = np.percentile(item, 1)
-            return_result['95percentile'] = np.percentile(item, 95)
-            return_result['5percentile'] = np.percentile(item, 5)
+            return_result['mean'] = item.mean().astype(float)
+            return_result['std'] = item.std().astype(float)
+            return_result['min'] = item.min().astype(float)
+            return_result['max'] = item.max().astype(float)
+            return_result['median'] = np.median(item).astype(float)
+            return_result['99_5percentile'] = np.percentile(item, 99.5).astype(float)
+            return_result['0_5percentile'] = np.percentile(item, 0.5).astype(float)
+            return_result['99percentile'] = np.percentile(item, 99).astype(float)
+            return_result['1percentile'] = np.percentile(item, 1).astype(float)
+            return_result['95percentile'] = np.percentile(item, 95).astype(float)
+            return_result['5percentile'] = np.percentile(item, 5).astype(float)
         else:
             raise Exception('Not a numpy array. Fingerprinting only works on '
                             'numpy arrays currently. ')
@@ -325,7 +325,7 @@ class Dataset_Fingerprint():
             self.fingerprint[item_nm] = subject
         elif itrbl:
             self.fingerprint[item_nm] = [
-                self.average_dictionaries(current, new)
+                self.average_dictionaries(new, current)
                 for current, new in zip(self.fingerprint[item_nm],subject)
             ]
         else:
