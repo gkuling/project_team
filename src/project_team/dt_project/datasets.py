@@ -1,3 +1,5 @@
+import numpy as np
+
 from ..project_config import is_Primitive
 import pandas as pd
 from torch.utils.data import Dataset
@@ -59,10 +61,6 @@ class Project_Team_Dataset(Dataset):
                     self.preload_transforms(
                         deepcopy(pre_loaded_ex)
                     )
-                # Take a dataset fingerprint if it is appropriate
-                if hasattr(self,'dataset_fingerprint'):
-                    self.dataset_fingerprint.update(pre_loaded_ex,
-                                                    post_loaded_ex)
 
                 # determine the items that will need to be stored in the
                 # files_silo if it is not a Primitive data type or it isn't
@@ -70,6 +68,12 @@ class Project_Team_Dataset(Dataset):
                 items_to_save = [key for key in pre_loaded_ex.keys()
                                  if not is_Primitive(post_loaded_ex[key]) or
                                  post_loaded_ex[key]!=pre_loaded_ex[key]]
+
+                # Take a data fingerprint if it is appropriate
+                if hasattr(self, 'dataset_fingerprint'):
+                    for item in items_to_save:
+                        self.dataset_fingerprint.update(item,
+                                                        post_loaded_ex[item])
 
                 pre_loaded_ex.update({key:value for key, value in post_loaded_ex.items()
                                       if key not in pre_loaded_ex.keys()})
@@ -267,7 +271,93 @@ class SITK_Dataset(Images_Dataset):
 
 class Dataset_Fingerprint():
     def __init__(self):
-        pass
+        self.fingerprint = {}
 
-    def update(self, preload, postload):
-        print('')
+    def average_dictionaries(self, dict1, dict2):
+        result_dict = {}
+
+        for key in dict1.keys():
+            if key in dict2:
+                if isinstance(dict1[key], (int, float)):
+                    result_dict[key] = (dict1[key] + dict2[key]) / 2
+                elif isinstance(dict1[key], list):
+                    result_dict[key] = [(x + y) / 2 for x, y in
+                                        zip(dict1[key], dict2[key])]
+                elif isinstance(dict1[key], tuple):
+                    result_dict[key] = tuple(
+                        (x + y) / 2 for x, y in zip(dict1[key], dict2[key]))
+        return result_dict
+    def finger_print(self, item):
+        return_result = {}
+        if type(item)==np.ndarray:
+            return_result['shape'] = item.shape
+            return_result['mean'] = item.mean()
+            return_result['std'] = item.std()
+            return_result['min'] = item.min()
+            return_result['max'] = item.max()
+            return_result['median'] = np.median(item)
+            return_result['99_5percentile'] = np.percentile(item, 99.5)
+            return_result['0_5percentile'] = np.percentile(item, 0.5)
+            return_result['99percentile'] = np.percentile(item, 99)
+            return_result['1percentile'] = np.percentile(item, 1)
+            return_result['95percentile'] = np.percentile(item, 95)
+            return_result['5percentile'] = np.percentile(item, 5)
+        else:
+            raise Exception('Not a numpy array. Fingerprinting only works on '
+                            'numpy arrays currently. ')
+        return return_result
+    def isititerable(self, itm):
+        try:
+            i = [_ for _ in itm]
+            return True
+        except:
+            return False
+
+    def update(self, item_nm, item):
+        itrbl = self.isititerable(item)
+
+        if itrbl:
+            subject = [self.finger_print(i) for i in item]
+        else:
+            subject = self.finger_print(item)
+
+        if item_nm not in self.fingerprint.keys():
+            self.fingerprint[item_nm] = subject
+        elif itrbl:
+            self.fingerprint[item_nm] = [
+                self.average_dictionaries(current, new)
+                for current, new in zip(self.fingerprint[item_nm],subject)
+            ]
+        else:
+            self.fingerprint[item_nm] = self.average_dictionaries(
+                self.fingerprint[item_nm], subject
+            )
+
+    def get_percentiles(self, field_oi, min, max):
+        itrbl = self.isititerable(self.fingerprint[field_oi])
+        if itrbl:
+            return [
+                (i[str(min).replace('.','_')+'percentile'],
+                 i[str(max).replace('.','_')+'percentile'])
+                for i in self.fingerprint[field_oi]
+            ]
+        else:
+            return (
+                self.fingerprint[field_oi][str(min).replace('.',
+                                                            '_')+'percentile'],
+                self.fingerprint[field_oi][str(max).replace('.',
+                                                            '_')+'percentile']
+            )
+
+    def get_mean_std(self, field_oi):
+        itrbl = self.isititerable(self.fingerprint[field_oi])
+        if itrbl:
+            return [
+                (i['mean'], i['std'])
+                for i in self.fingerprint[field_oi]
+            ]
+        else:
+            return (
+                self.fingerprint[field_oi]['mean'],
+                self.fingerprint[field_oi]['std']
+            )

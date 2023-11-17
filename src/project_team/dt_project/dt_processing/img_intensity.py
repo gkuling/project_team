@@ -1,3 +1,4 @@
+import torchvision.transforms
 from skimage import exposure
 import numpy as np
 from . import _TensorProcessing
@@ -7,11 +8,10 @@ class MnStdNormalize_Numpy(_TensorProcessing):
     '''
     intensity normalization based on mean and standard deviation
     '''
-    def __init__(self, norm=[(0,1)], percentiles=(1,99), field_oi='X'):
+    def __init__(self, norm=[(0,1)], field_oi='X'):
         super(MnStdNormalize_Numpy, self).__init__()
         self.field_oi = field_oi
         self.norm = norm
-        self.percentiles = percentiles
 
     def __call__(self, ipt):
         img = ipt[self.field_oi]
@@ -25,25 +25,8 @@ class MnStdNormalize_Numpy(_TensorProcessing):
             if nrm is None:
                 output[i] = img[i]
                 continue
-            # if the image values are all the same, do nothing to the channel
-            if img[i].max()==img[i].min():
-                clipped = img[i]
-            else:
-                if self.percentiles is not None:
-                    upper = np.percentile(img[i][img[i]!=0], self.percentiles[1])
 
-                    lower = np.percentile(img[i][img[i]!=0], self.percentiles[0])
-                else:
-                    upper=img[i].max()
-                    lower = img[i].min()
-
-                assert upper>lower
-                clipped = np.clip(img[i], a_min=lower, a_max=upper)
-
-                clipped = (clipped - lower)
-                clipped = (clipped / clipped.max())
-
-            norm_img = (clipped-nrm[0])/nrm[1]
+            norm_img = (img[i]-nrm[0])/nrm[1]
 
             output[i] = norm_img
 
@@ -98,16 +81,16 @@ class Clip_Numpy(_TensorProcessing):
     '''
     clip a numpy values between a given min and max
     '''
-    def __init__(self, max=1.0, min=0.0, field_oi='X'):
+    def __init__(self, max_min=[(0., 1.)], field_oi='X'):
         super(Clip_Numpy, self).__init__()
-        self.max = max
-        self.min = min
+        self.max_min = max_min
         self.field_oi = field_oi
 
     def __call__(self, ipt):
         img = ipt[self.field_oi]
 
-        img = [np.clip(i, self.min, self.max) for i in img]
+        img = [np.clip(a=i, a_min=mn[0], a_max=mn[1])
+               for i, mn in zip(img, self.max_min)]
 
         ipt[self.field_oi] = img
 

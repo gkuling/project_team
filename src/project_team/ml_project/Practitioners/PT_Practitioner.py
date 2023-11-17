@@ -9,7 +9,8 @@ from transformers import get_cosine_schedule_with_warmup
 import gc
 from tqdm import tqdm
 from project_team.dt_project.dt_processing import Add_Channel, \
-    MnStdNormalize_Numpy, AffineAugmentation, AddGaussainNoise, ToTensor
+    MnStdNormalize_Numpy, AffineAugmentation, AddGaussainNoise, ToTensor, \
+    Clip_Numpy
 
 class PTPractitioner_config(project_config):
     def __init__(self,
@@ -200,17 +201,19 @@ class PT_Practitioner(object):
 
         self.custom_transforms = None
 
+        self.initialize_standard_pretransforms()
+    def initialize_standard_pretransforms(self):
         # change standard_transforms based on the input data type
         self.standard_transforms = []
-        if self.io_manager.config.X_dtype!='Text':
+        if self.io_manager.config.X_dtype != 'Text':
             self.standard_transforms.extend([
+                Clip_Numpy(field_oi='X',
+                           max_min=self.config.normalization_percentiles),
                 Add_Channel(field_oi='X'),
                 MnStdNormalize_Numpy(norm=list(self.config.normalization_channels),
-                                     percentiles=self.config.normalization_percentiles,
                                      field_oi='X'),
                 ToTensor(field_oi='X')
             ])
-
     def validate_model(self, val_dataloader):
         raise NotImplementedError('This Parent class does not have a '
                                   'validate model function.')
@@ -279,6 +282,21 @@ class PT_Practitioner(object):
             trnsfrms.extend([
                 AddGaussainNoise(self.config.gaussian_std)
             ])
+
+        # use dataset fingerprint for 'auto' parameters
+        params_to_auto = [key for key in self.config.to_dict() if
+                          getattr(self.config, key) == 'auto']
+        if len(params_to_auto) > 0:
+            if 'normalization_percentiles' in params_to_auto:
+                self.config.normalization_percentiles = (
+                    self.data_processor.tr_dset.dataset_fingerprint
+                    .get_percentiles('X', 0.5, 99.5))
+            if 'normalization_channels' in params_to_auto:
+                self.config.normalization_channels = (
+                    self.data_processor.tr_dset.dataset_fingerprint
+                    .get_mean_std('X'))
+            self.initialize_standard_pretransforms()
+
         # custom transforms are always performed before standard transforms
         trnsfrms.extend(self.standard_transforms)
 
