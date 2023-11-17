@@ -16,10 +16,8 @@ ml_args = {
     'affine_aug':False,
     'add_Gnoise':False,
     'gaussian_std':1.0,
-    'normalization_percentiles':'auto',
-    # 'normalization_percentiles': None,
+    'normalization_percentiles':'auto_min_max',
     'normalization_channels':'auto',
-    # 'normalization_channels': [(0.1307, 0.3081)],
     'n_workers':0,
     'visualize_val':False,
     'data_parallel':False

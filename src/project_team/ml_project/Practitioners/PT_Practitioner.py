@@ -285,12 +285,27 @@ class PT_Practitioner(object):
 
         # use dataset fingerprint for 'auto' parameters
         params_to_auto = [key for key in self.config.to_dict() if
-                          getattr(self.config, key) == 'auto']
+                          type(getattr(self.config, key) )==str and
+                          'auto' in getattr(self.config, key)]
         if len(params_to_auto) > 0:
             if 'normalization_percentiles' in params_to_auto:
-                self.config.normalization_percentiles = (
-                    self.data_processor.tr_dset.dataset_fingerprint
-                    .get_percentiles('X', 0.5, 99.5))
+                if self.config.normalization_percentiles=='auto' or \
+                    self.config.normalization_percentiles=='auto_05_995':
+                    self.config.normalization_percentiles = (
+                        self.data_processor.tr_dset.dataset_fingerprint
+                        .get_percentiles('X', 0.5, 99.5))
+                elif self.config.normalization_percentiles=='auto_1_99':
+                    self.config.normalization_percentiles = (
+                        self.data_processor.tr_dset.dataset_fingerprint
+                        .get_percentiles('X', 1, 99))
+                elif self.config.normalization_percentiles == 'auto_5_95':
+                    self.config.normalization_percentiles = (
+                        self.data_processor.tr_dset.dataset_fingerprint
+                        .get_percentiles('X', 5, 95))
+                elif self.config.normalization_percentiles == 'auto_min_max':
+                    self.config.normalization_percentiles = (
+                        self.data_processor.tr_dset.dataset_fingerprint
+                        .get_min_max('X'))
             if 'normalization_channels' in params_to_auto:
                 self.config.normalization_channels = (
                     self.data_processor.tr_dset.dataset_fingerprint
