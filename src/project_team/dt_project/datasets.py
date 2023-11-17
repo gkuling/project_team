@@ -361,3 +361,16 @@ class Dataset_Fingerprint():
                 self.fingerprint[field_oi]['mean'],
                 self.fingerprint[field_oi]['std']
             )
+
+    def get_min_max(self, field_oi):
+        itrbl = self.isititerable(self.fingerprint[field_oi])
+        if itrbl:
+            return [
+                (i['min'], i['max'])
+                for i in self.fingerprint[field_oi]
+            ]
+        else:
+            return (
+                self.fingerprint[field_oi]['min'],
+                self.fingerprint[field_oi]['max']
+            )
