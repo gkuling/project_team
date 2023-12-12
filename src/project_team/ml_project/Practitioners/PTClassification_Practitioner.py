@@ -43,8 +43,7 @@ class PTClassification_Practitioner(PT_Practitioner):
         self.practitioner_name = 'PTClassification'
         # Standard transfroms for training would be in ensure all input and
         # out put are tensors
-        self.standard_transforms.extend([ToTensor(field_oi='X'),
-                                         ToTensor(field_oi='y')])
+        self.subclass_standard_transforms = [ToTensor(field_oi='y')]
 
     def validate_model(self, val_dataloader):
         '''

@@ -41,11 +41,10 @@ class PTRegression_Practitioner(PT_Practitioner):
         self.practitioner_name = 'PTRegression'
         # Standard transfroms for training would be in ensure all input and
         # out put are tensors
-        self.standard_transforms.extend([
-            ToTensor(field_oi='X'),
+        self.subclass_standard_transforms = [
             Cast_numpy(field_oi='y', data_type=np.float32),
             ToTensor(field_oi='y')
-        ])
+        ]
 
     def validate_model(self, val_dataloader):
         '''

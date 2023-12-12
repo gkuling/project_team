@@ -2,7 +2,7 @@
 Copyright (c) 2023, Martel Lab, Sunnybrook Research Institute
 
 Description: Example code of how to use the project_team to train a model on
-classification. This example is performed on the MNIST dataset. This will
+regression. This example is performed on the MNIST dataset. This will
 perform a Train-Test Split experiment
 
 Input: a working_dir (working directory) to perform the experiment in
@@ -15,6 +15,7 @@ pth file.
 import argparse
 
 import pandas as pd
+from scipy.stats import spearmanr
 from torchvision import datasets
 from sklearn.metrics import accuracy_score
 
@@ -65,7 +66,7 @@ io_args = {
     'data_csv_location':opt.working_dir + '/data/dataset_info.csv',
     'inf_data_csv_location': None,
     'val_data_csv_location': None,
-    'experiment_name':'MNIST_TrainTestSplit',
+    'experiment_name':'MNIST_Reg_TrainTestSplit',
     'project_folder':opt.working_dir,
     'X':'img_data',
     'X_dtype':'PIL png',
@@ -78,6 +79,8 @@ io_args = {
     'stratify_by': 'label',
     'r_seed': r_seed
 }
+
+ml_args['loss_type'] = 'MSE'
 
 io_project_cnfg = proteam.io_project.io_traindeploy_config(**io_args)
 
@@ -96,12 +99,23 @@ processor = proteam.dt_project.Image_Processor(
 mdl = proteam.models.MNIST_CNN(
     proteam.models.MNIST_CNN_config(**mdl_args)
 )
+mdl = proteam.models.PTRegressionModel(
+    encoder=mdl,
+    config=proteam.models.PTRegression_config(
+        encoder='custom',
+        regresser_input=10,
+        regressor_output=1,
+        flatten_assist=False,
+        output_style='continuous'
+    )
+)
+
 
 # Prepare Practitioner
-ml_project_cnfg = proteam.ml_project.PTClassification_Practitioner_config(
+ml_project_cnfg = proteam.ml_project.PTRegression_Practitioner_config(
     **ml_args)
 
-practitioner = proteam.ml_project.PTClassification_Practitioner(
+practitioner = proteam.ml_project.PTRegression_Practitioner(
     model=mdl,
     io_manager=manager,
     data_processor=processor,
@@ -130,7 +144,7 @@ test_results = processor.inference_results
 
 # Evaluate Inference Results
 print('Model Accuracy: ' +
-      str(accuracy_score(test_results['y'], test_results['pred_y'])))
+      str(spearmanr(test_results['y'], test_results['pred_y'])))
 
-print('End of MNIST_Classification.py')
+print('End of MNIST_regression_TrainTestSplit.py')
 

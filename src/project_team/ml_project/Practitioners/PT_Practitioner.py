@@ -201,6 +201,8 @@ class PT_Practitioner(object):
 
         self.custom_transforms = None
 
+        self.subclass_standard_transforms = []
+
         self.initialize_standard_pretransforms()
     def initialize_standard_pretransforms(self):
         # change standard_transforms based on the input data type
@@ -214,6 +216,8 @@ class PT_Practitioner(object):
                                      field_oi='X'),
                 ToTensor(field_oi='X')
             ])
+        self.standard_transforms.extend(self.subclass_standard_transforms)
+
     def validate_model(self, val_dataloader):
         raise NotImplementedError('This Parent class does not have a '
                                   'validate model function.')
