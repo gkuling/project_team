@@ -37,7 +37,6 @@ class nnUNet_Practitioner():
         self.io_manager = io_manager
         self.dt_processor = dt_processor
         self.config = practitioner_config
-
     def train_model(self):
 
         dataset_json = {

@@ -316,6 +316,9 @@ class nnUNetSITK_Processor(SITK_Processor_Segmentation):
 
         # build processor_dataset
         self.get_dataset(csv_location, set_name, pre_transforms)
+        # remove fingerprinting for this one processor because nnunet already
+        # does it
+        delattr(getattr(self, set_name), 'dataset_fingerprint')
         # pre_load the data
         if self.config.pre_load:
             getattr(getattr(self, set_name), 'perform_preload').__call__()

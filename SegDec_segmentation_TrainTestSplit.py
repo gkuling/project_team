@@ -25,12 +25,18 @@ dataset_file = os.path.join(opt.working_dir,
                                    'segmentation_dataset.csv')
 
 import shutil
-shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+if os.path.exists(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
                            'nnunetv2_raw', 'Dataset001_Current',
-                           'imagesTs'))
-shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
-                           'nnunetv2_raw', 'Dataset001_Current',
-                           'imagesTs_predlowres'))
+                           'imagesTs')):
+    shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                               'nnunetv2_raw', 'Dataset001_Current',
+                               'imagesTs'))
+if os.path.exists(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                             'nnunetv2_raw', 'Dataset001_Current',
+                            'imagesTs_predlowres')):
+    shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                               'nnunetv2_raw', 'Dataset001_Current',
+                               'imagesTs_predlowres'))
 # Prepare data if not already saved and set up
 if not os.path.exists(dataset_file):
 
@@ -112,11 +118,11 @@ practitioner = nnUNet_Practitioner(
 manager.prepare_for_experiment()
 
 
-# processor.set_training_data(manager.root)
-#
-# practitioner.train_model()
+processor.set_training_data(manager.root)
 
-# PErform Inference
+practitioner.train_model()
+
+# Perform Inference
 
 processor.set_inference_data(manager.root)
 
