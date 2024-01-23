@@ -32,6 +32,12 @@ if os.path.exists(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
                                'nnunetv2_raw', 'Dataset001_Current',
                                'imagesTs'))
 if os.path.exists(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                               'nnunetv2_raw', 'Dataset001_Current',
+                               'imagesTs')):
+    shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
+                               'nnunetv2_raw', 'Dataset001_Current',
+                               'imagesTs'))
+if os.path.exists(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',
                              'nnunetv2_raw', 'Dataset001_Current',
                             'imagesTs_predlowres')):
     shutil.rmtree(os.path.join(opt.working_dir, 'nnUNet_TrainTestSplit',

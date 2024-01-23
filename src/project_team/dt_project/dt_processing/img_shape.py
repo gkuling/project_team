@@ -210,7 +210,7 @@ class Resample_SITK_shape(_TensorProcessing):
 
         if not meta_data:
             # collection of important meta data for resampling
-            orig_size = np.array(image.GetSize(), dtype=np.int)
+            orig_size = np.array(image.GetSize(), dtype=int)
             orig_spacing = image.GetSpacing()
             new_size = np.array([sz if sz is not None
                                  else orig_size[i]
@@ -335,10 +335,10 @@ class Resample_SITK_spacing(_TensorProcessing):
             output_spacing = [sp if sp is not None
                               else image.GetSpacing()[i]
                               for i, sp in enumerate(self.spacing)]
-            orig_size = np.array(image.GetSize(), dtype=np.int)
+            orig_size = np.array(image.GetSize(), dtype=int)
             orig_spacing = image.GetSpacing()
             new_size = orig_size * (np.array(orig_spacing) / np.array(output_spacing))
-            new_size = np.ceil(new_size).astype(np.int).tolist()
+            new_size = np.ceil(new_size).astype(int).tolist()
             meta_data = {'orig_size': [int(v) for v in orig_size],
                          'orig_spc': list(orig_spacing),
                          'orig_dir': image.GetDirection(),
