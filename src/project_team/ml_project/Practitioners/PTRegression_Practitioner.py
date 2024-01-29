@@ -102,7 +102,6 @@ class PTRegression_Practitioner(PT_Practitioner):
         epoch_iterator = tqdm(self.data_processor.if_dset, desc="  Inference",
                               position=0, leave=True)
         return_results = []
-        print(hasattr(self.model, 'config'))
         for batch_idx, data in enumerate(epoch_iterator):
             # prepare data
             res = data.copy()

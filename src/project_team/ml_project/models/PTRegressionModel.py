@@ -5,7 +5,7 @@ import torch
 class PTRegression_config(project_config):
     def __init__(self,
                  encoder='flatten',
-                 regresser_input=512,
+                 regressor_input=512,
                  regressor_output=1,
                  flatten_assist=False,
                  output_style='continuous',
@@ -28,7 +28,7 @@ class PTRegression_config(project_config):
         '''
         super(PTRegression_config, self).__init__('model_PTRegression')
         self.encoder = encoder
-        self.regresser_input = regresser_input
+        self.regressor_input = regressor_input
         self.flatten_assist = flatten_assist
         self.output_style = output_style
         if output_style!='continuous' and regressor_output==1:
@@ -70,16 +70,16 @@ class PTRegressionModel(nn.Module):
         # determine the output style
         if self.config.output_style=='continuous':
             self.regresser = nn.Linear(
-                config.regresser_input, self.config.regressor_output
+                config.regressor_input, self.config.regressor_output
             )
         elif self.config.output_style=='CORAL':
             assert self.config.regressor_output>1
-            self.regresser = nn.Linear(self.config.regresser_input, 1, bias=False)
+            self.regresser = nn.Linear(self.config.regressor_input, 1, bias=False)
             self.coral_bias = nn.Parameter(
                 0.5 * torch.ones(self.config.regressor_output-1).float())
         elif self.config.output_style=='softlabel' or self.config.output_style=='binary':
             assert self.config.regressor_output>1
-            self.regresser = nn.Linear(self.config.regresser_input,
+            self.regresser = nn.Linear(self.config.regressor_input,
                                        self.config.regressor_output,
                                        bias=True)
         else:
@@ -108,7 +108,7 @@ class PTRegressionModel(nn.Module):
             raise Exception('The encoder and the regressor_input are mis-'
                             'matched.  The regressor input should be ' + str(
                 latent.shape[1]) + ' and not ' + str(
-                self.config.regresser_input))
+                self.config.regressor_input))
 
         # run regression head in the varying forms
         if self.config.output_style=='continuous' :
