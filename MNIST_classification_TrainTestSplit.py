@@ -25,7 +25,7 @@ from default_arguements import dt_args, ml_args, mdl_args
 r_seed = 20230117
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--working_dir',type=str,
-                    default='/amartel_data/Grey/pro_team_examples',
+                    default=os.getcwd(),
                     help='The current directory to save models, and configs '
                          'of the experiment')
 parser.add_argument('--start_from_checkpoint', action='store_true',
