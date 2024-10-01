@@ -1,12 +1,8 @@
---index-url https://download.pytorch.org/whl/cpu
---index-url https://test.pypi.org/simple/
---extra-index-url https://pypi.org/simple
-torch==2.3.1
-torchvision==0.18.1
-torchaudio==2.3.1
+torch
+torchvision
+torchaudio
 pandas
 numpy
-SimpleITK
 tqdm
 scikit-image
 scikit-learn
@@ -16,4 +12,3 @@ matplotlib
 statsmodels
 nltk
 chardet
-nnunetv2
