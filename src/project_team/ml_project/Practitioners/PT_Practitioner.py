@@ -531,7 +531,9 @@ class PT_Practitioner(object):
 
             epoch_iterator = tqdm(tr_dtldr, desc="Epoch " + str(epoch)
                                                  + " Iteration: ",
-                                  position=0, leave=True)
+                                  position=0, leave=True,
+                                  ncols=80
+                                  )
             epoch_iterator.set_postfix({'loss': 'Initialized'})
             tr_loss = []
             # begin batch loop

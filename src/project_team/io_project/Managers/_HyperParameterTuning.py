@@ -218,7 +218,7 @@ class _HyperParameterTuning(_Statistical_Project):
                 )
             except:
                 perf = 'FAIL'
-            grid_pt_fldr = re.search('grid_point\d+', fl)
+            grid_pt_fldr = re.search(r'grid_point\d+', fl)
             ind = int(''.join([chr for chr in
                                fl[grid_pt_fldr.start():grid_pt_fldr.end()]
                                if chr.isdigit()]))

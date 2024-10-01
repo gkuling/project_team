@@ -32,8 +32,9 @@ def quick_visualize(input_data, folder, score):
     ax[2,1].imshow(pred[:, mids[1]],cmap='gray', aspect='auto')
     ax[2,2].imshow(pred[:,:,mids[2]], cmap='gray', aspect='auto')
     fig.suptitle(str(score), fontsize=28)
-    name = folder + '/' + str(input_data['AccNum']) + '_' + input_data[
+    name = str(input_data['AccNum']) + '_' + input_data[
         'Acquisition'] + '.pdf'
+    name = os.path.join(folder, name)
     plt.savefig(name)
     plt.close(fig)
 

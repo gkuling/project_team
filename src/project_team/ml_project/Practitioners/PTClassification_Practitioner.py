@@ -51,7 +51,7 @@ class PTClassification_Practitioner(PT_Practitioner):
         :param val_dataloader: validation data laoder
         :return: the overall validation loss
         '''
-        print('')
+        # print('')
         self.model.eval()
         epoch_iterator = tqdm(val_dataloader, desc="  Validation",
                               position=0, leave=True)

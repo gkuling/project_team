@@ -28,9 +28,9 @@ parser.add_argument('--working_dir',type=str,
 opt = parser.parse_args()
 
 # Prepare data if not already saved and set up
-if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
-    if not os.path.exists(opt.working_dir + '/data'):
-        os.mkdir(opt.working_dir + '/data')
+if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
+    if not os.path.exists(os.path.join(opt.working_dir, 'data')):
+        os.mkdir(os.path.join(opt.working_dir, 'data'))
 
     dataset1 = datasets.MNIST('../data', train=True, download=True)
 
@@ -38,21 +38,28 @@ if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
     all_data = []
     cnt = 0
     for ex in dataset1:
-        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
+        save_local = os.path.join(opt.working_dir,
+                                'data',
+                                'img_' + str(cnt) + '.png')
+        ex[0].save(save_local)
         all_data.append(
-            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
+            {'img_data': save_local,
              'label': ex[1]}
         )
         cnt += 1
     for ex in dataset2:
-        ex[0].save(opt.working_dir + '/data/img_' + str(cnt) + '.png')
+        save_local = os.path.join(opt.working_dir,
+                                  'data',
+                                  'img_' + str(cnt) + '.png')
+        ex[0].save(save_local)
         all_data.append(
-            {'img_data': opt.working_dir + '/data/img_' + str(cnt) + '.png',
+            {'img_data': save_local,
              'label': ex[1]}
         )
         cnt += 1
     all_data = pd.DataFrame(all_data)
-    all_data.to_csv(opt.working_dir + '/data/dataset_info.csv')
+    all_data.to_csv(
+        os.path.join(opt.working_dir, 'data', 'dataset_info.csv'))
     print('Saved all images and data set file to ' + opt.working_dir + '/data')
 
 # Prepare Manager
@@ -60,7 +67,9 @@ if not os.path.exists(opt.working_dir + '/data/dataset_info.csv'):
 from default_arguements import dt_args, ml_args
 
 io_args = {
-    'data_csv_location':opt.working_dir + '/data/dataset_info.csv',
+    'data_csv_location':os.path.join(opt.working_dir,
+                                     'data',
+                                     'dataset_info.csv'),
     'inf_data_csv_location': None,
     'val_data_csv_location': None,
     'experiment_name':'MNIST_HPTuning',
