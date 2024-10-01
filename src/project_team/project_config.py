@@ -7,7 +7,7 @@ import os
 import copy
 import json
 import inspect
-
+from transformers import PretrainedConfig
 CONFIG_NAME = '.json'
 
 def is_Primitive(thing):

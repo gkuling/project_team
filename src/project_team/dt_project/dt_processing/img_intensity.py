@@ -2,7 +2,6 @@ import torchvision.transforms
 from skimage import exposure
 import numpy as np
 from . import _TensorProcessing
-import SimpleITK as sitk
 
 class MnStdNormalize_Numpy(_TensorProcessing):
     '''
@@ -112,75 +111,4 @@ class Histogram_Equalization_Numpy(_TensorProcessing):
                                                           clip_limit=0.03
                                                           )
                               for np_ar in ipt[self.field_oi]]
-        return ipt
-
-class SITK_N4BiasFieldCorrection(_TensorProcessing):
-    '''
-    This will run the SITK N4 bias field correction
-    '''
-    def __init__(self,
-                 field_oi ='X',
-                 shrink_factor=2,
-                 mask_image=None,
-                 num_iterations=None,
-                 num_OffFittingLevels=None):
-        super(SITK_N4BiasFieldCorrection, self).__init__()
-        self.field_oi = field_oi
-        self.shrink_factor = shrink_factor
-        self.mask_image = mask_image
-        self.num_iterations = num_iterations
-        self.num_OffFittingLevels = num_OffFittingLevels
-
-    def __call__(self, ipt):
-        temp_res = []
-        for inputImage in ipt[self.field_oi]:
-            if self.mask_image:
-                if type(ipt[self.mask_image]) and all([type(im)==sitk.Image for im
-                                                       in ipt[
-                                                           self.mask_image]]):
-                    maskImage = ipt[self.mask_image][0]
-                else:
-                    maskImage = sitk.ReadImage(ipt[self.mask_image],
-                                           sitk.sitkUInt8)
-            else:
-                maskImage = sitk.OtsuThreshold(inputImage, 0, 1, 200)
-
-            if maskImage.GetPixelID()!=sitk.sitkUInt8:
-                maskImage = sitk.Cast(maskImage, sitk.sitkUInt8)
-
-            if self.shrink_factor and all([sz%self.shrink_factor for sz in
-                                           inputImage.GetSize()]):
-                shrinkFactor = int(self.shrink_factor)
-                if shrinkFactor>1:
-                    image = sitk.Shrink(inputImage,
-                                        [shrinkFactor] *
-                                        inputImage.GetDimension())
-                    maskImage = sitk.Shrink(maskImage,
-                                            [shrinkFactor] *
-                                            inputImage.GetDimension())
-                else:
-                    image = inputImage
-            else:
-                image = inputImage
-            corrector = sitk.N4BiasFieldCorrectionImageFilter()
-
-            numberFittingLevels = 4
-
-            if self.num_OffFittingLevels:
-                numberFittingLevels = int(self.num_OffFittingLevels)
-
-            if self.num_iterations:
-                corrector.SetMaximumNumberOfIterations(
-                    [int(self.num_iterations)] * numberFittingLevels
-                )
-
-            corrected_image = corrector.Execute(image, maskImage)
-
-
-            log_bias_field = corrector.GetLogBiasFieldAsImage(inputImage)
-
-            corrected_image_full_resolution = inputImage / \
-                                              sitk.Exp( log_bias_field )
-            temp_res.append(corrected_image_full_resolution)
-        ipt[self.field_oi] = temp_res
         return ipt

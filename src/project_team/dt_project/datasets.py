@@ -255,20 +255,6 @@ class Text_Dataset(Project_Team_Dataset):
         # Checking that the entire input_data of the model is not 0.0
         return not all([input_data == 0 for input_data in processed_x['X']])
 
-class SITK_Dataset(Images_Dataset):
-    '''
-    A dataset that is designated to handling SimpleITK imaging files
-    '''
-    def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None, transforms=None,
-                 preload_data=False, filter_out_zero_X=True, debug_pretransform=False):
-        super(SITK_Dataset, self).__init__(data_df,
-                                           preload_transforms,
-                                           transforms,
-                                           preload_data,
-                                           filter_out_zero_X,
-                                           debug_pretransform)
-        self.dataset_fingerprint = Dataset_Fingerprint()
-
 class Dataset_Fingerprint():
     def __init__(self):
         self.fingerprint = {}
