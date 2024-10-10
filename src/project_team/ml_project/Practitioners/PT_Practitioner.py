@@ -289,6 +289,7 @@ class PT_Practitioner(object):
 
         # use dataset fingerprint for 'auto' parameters
         params_to_auto = [key for key in self.config.to_dict() if
+                          key!='transformers_version' and
                           type(getattr(self.config, key) )==str and
                           'auto' in getattr(self.config, key)]
         if len(params_to_auto) > 0:
@@ -456,7 +457,7 @@ class PT_Practitioner(object):
         if self.config.vl_interval is None and not self.config.n_saves is None:
             # if no val_interval but n_saves given
             self.config.vl_interval = \
-                np.round(self.config.n_steps / self.config.n_saves).astype(int)
+                int(np.round(self.config.n_steps / self.config.n_saves))
 
         elif not self.config.vl_interval is None and self.config.n_saves is None:
             # if no n_saves given but val_interval given
@@ -611,7 +612,7 @@ class PT_Practitioner(object):
                 if self.config.trained_steps-1!=0 and \
                         (self.config.trained_steps-1)%self.config.vl_interval==0:
                     if vl_dtldr:
-                        vl_loss = self.validate_model(vl_dtldr)
+                        vl_loss = float(self.validate_model(vl_dtldr))
                         if self.config.validation_criteria=='min':
                             if vl_loss<self.config.best_vl_loss:
                                 self.config.best_vl_loss = vl_loss
@@ -654,7 +655,7 @@ class PT_Practitioner(object):
                 self.scheduler.step()
         # perform one last validation run after all training is over
         if vl_dtldr:
-            vl_loss = self.validate_model(vl_dtldr)
+            vl_loss = float(self.validate_model(vl_dtldr))
             if self.config.validation_criteria=='min':
                 if vl_loss<self.config.best_vl_loss:
                     self.config.best_vl_loss = vl_loss
