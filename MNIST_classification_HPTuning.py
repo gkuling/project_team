@@ -92,10 +92,10 @@ io_args['technique'] = 'GridSearch'
 io_args['criterion'] = 'Acc._Overall'
 
 hp_search_parameters= {
-    'kernel': [3,5],
+    'kernel': [3],
     'hidden_layer_parameters': [128, 256],
     'optimizer': ['adadelta', 'adam'],
-    'numpy_shape': [(28,28), (56,56)]
+    'numpy_shape': [(28,28)]
 }
 
 io_project_cnfg = proteam.io_project.io_hptuning_config(**io_args)
