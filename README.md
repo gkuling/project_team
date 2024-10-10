@@ -2,22 +2,12 @@
 
 ## Installation
 
-This project is originally programmed for Python 3.9 
+To install the package, you can use the following command from in this 
+project folder:
 
-The original package is hosted on test.pypi.org. To install the package, run the following command:
-
-``` pip install -i https://test.pypi.org/simple/ project-team ``` 
-
-Note: The pip installation does not install the requirements. To install the requirements, download the `requirements.txt` file and run the following command:
-
-``` pip install -r requirements.txt ```
-
-Alternatively you can install the package from the source code. To do so, follow the steps below:
-
-1. Download this project and move current working directory to this project 
-2. Run `python setup.py install`
-3. Run `pip install -r requirements.py`
-4. Use this package in other projects with the same environment
+```bash
+pip install -e .
+```
 
 ## Framework 
 
