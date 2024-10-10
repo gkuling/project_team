@@ -1,5 +1,5 @@
 
-__version__ = "0.1.17"
+__version__ = "1.0.0"
 
 import io
 import contextlib
