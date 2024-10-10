@@ -13,8 +13,9 @@ class io_hptuning_config(io_config):
     '''
     Configuration for a hyperparameter tuning experiment
     '''
-    def __init__(self, data_csv_location, technique, training_portion,
-                 criterion= 'ACC', iterations=1, penultimate=None,
+    def __init__(self, data_csv_location=None, technique='GridSearch',
+                 training_portion=1.0, criterion= 'ACC', iterations=1,
+                 penultimate=None,
                  **kwargs):
         '''
         :param data_csv_location: data set dsv file or dataframe containing
