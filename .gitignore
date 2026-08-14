@@ -146,3 +146,4 @@ MNIST_Regression*/
 *.pth
 *.png
 !img/*.png
+.DS_Store
