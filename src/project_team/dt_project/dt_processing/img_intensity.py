@@ -1,7 +1,9 @@
-import torchvision.transforms
 from skimage import exposure
 import numpy as np
 from . import _TensorProcessing
+
+__all__ = ['MnStdNormalize_Numpy', 'MxMnNormalize_Numpy', 'Clip_Numpy',
+           'Histogram_Equalization_Numpy']
 
 class MnStdNormalize_Numpy(_TensorProcessing):
     '''
@@ -44,7 +46,7 @@ class MxMnNormalize_Numpy(_TensorProcessing):
 
     def __call__(self, ipt):
         img = ipt[self.field_oi]
-        if type(ipt[self.field_oi])==list:
+        if isinstance(ipt[self.field_oi], list):
             img = np.array(img)
         if img.shape[0]!=len(self.norm):
             raise Exception('The amount of normalization factors does not '
@@ -53,15 +55,14 @@ class MxMnNormalize_Numpy(_TensorProcessing):
                             'normalization parameter(s). ')
         output = np.zeros(img.shape)
         for i, nrm in enumerate(self.norm):
-            if img.max==1.0 and img.min()==-1.0:
-                print('')
+            # an all-zero channel leaves nothing to take percentiles of
             try:
                 upper = np.percentile(img[i][img[i]!=0], self.percentiles[i][1])
-            except:
+            except (IndexError, ValueError):
                 upper = 0.0
             try:
                 lower = np.percentile(img[i][img[i]!=0], self.percentiles[i][0])
-            except:
+            except (IndexError, ValueError):
                 lower = 0.0
             clipped = np.clip(img[i], lower, upper)
 
@@ -70,7 +71,7 @@ class MxMnNormalize_Numpy(_TensorProcessing):
 
             output[i] = (self.norm[i][1]-self.norm[i][0]) * clipped + \
                         self.norm[i][0]
-        if type(ipt[self.field_oi])==list:
+        if isinstance(ipt[self.field_oi], list):
             ipt[self.field_oi] = [output[i] for i in range(output.shape[0])]
         else:
             ipt[self.field_oi] = output
@@ -99,16 +100,16 @@ class Histogram_Equalization_Numpy(_TensorProcessing):
     '''
     perform histogram normalization on the given numpy array
     '''
-    def __init__(self, bins=1000, mask_mxmn=(0.1,0.99), field_oi='X'):
+    def __init__(self, bins=1000, clip_limit=0.03, field_oi='X'):
         super(Histogram_Equalization_Numpy, self).__init__()
         self.bins=bins
-        self.mask_mxmn = mask_mxmn
+        self.clip_limit = clip_limit
         self.field_oi = field_oi
 
     def __call__(self, ipt):
         ipt[self.field_oi] = [exposure.equalize_adapthist(np_ar,
                                                           nbins=self.bins,
-                                                          clip_limit=0.03
+                                                          clip_limit=self.clip_limit
                                                           )
                               for np_ar in ipt[self.field_oi]]
         return ipt

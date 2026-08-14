@@ -1,6 +1,11 @@
-import scipy.ndimage.interpolation as sni
+# scipy.ndimage.interpolation is a deprecated shim slated for removal
+from scipy.ndimage import shift as ndimage_shift, \
+    rotate as ndimage_rotate, zoom as ndimage_zoom
 from . import _TensorProcessing
 import numpy as np
+
+__all__ = ['AffineAugmentation', 'Translate_3DNumpy', 'Rotate_3DNumpy',
+           'Scale_3DNumpy', 'AddGaussianNoise', 'AddGaussainNoise']
 
 class AffineAugmentation(_TensorProcessing):
     '''
@@ -10,16 +15,19 @@ class AffineAugmentation(_TensorProcessing):
     def __init__(self, shift=1, rot=1, scale=0.1, dimensionality=3, field_oi='X',
                  order=0, distribution_type='Gaussian'):
         super(AffineAugmentation, self).__init__()
-        if type(shift)==int or type(shift)==float:
+        if isinstance(shift, (int, float)):
             shift = tuple([shift for _ in range(dimensionality)])
-        if type(shift)==list and len(shift)==dimensionality:
+        if isinstance(shift, list) and len(shift)==dimensionality:
             shift = tuple(shift)
-        if type(rot)==int or type(rot)==float:
+        if isinstance(rot, (int, float)):
             rot = tuple([rot for _ in range(dimensionality)])
-        if type(rot)==list and len(rot)==dimensionality:
+        if isinstance(rot, list) and len(rot)==dimensionality:
             rot = tuple(rot)
-        assert type(shift)==tuple
-        assert type(rot)==tuple
+        if not isinstance(shift, tuple) or not isinstance(rot, tuple):
+            raise TypeError(
+                'shift and rot must be numbers, or lists/tuples of length '
+                'dimensionality (' + str(dimensionality) + '); got shift=' +
+                repr(shift) + ', rot=' + repr(rot))
 
         self.shift = shift
         self.rot = rot
@@ -34,14 +42,7 @@ class AffineAugmentation(_TensorProcessing):
         return value
 
     def build_meta_data(self):
-        if self.dist_type=='Uniform':
-            return {
-                'scaling': 1+np.random.uniform(-self.scale,self.scale),
-                'rotation': tuple([np.deg2rad(np.random.uniform(-r,r)) for r in
-                                   self.rot]),
-                'translation': tuple([np.random.randint(-t,t) for t in self.shift])
-            }
-        elif self.dist_type=='Gaussian':
+        if self.dist_type=='Gaussian':
             return {
                 'scaling': 1+self.calc_from_normal(self.scale),
                 'rotation': tuple([np.deg2rad(self.calc_from_normal(r)) for
@@ -50,6 +51,7 @@ class AffineAugmentation(_TensorProcessing):
                                       in self.shift])
             }
         else:
+            # 'Uniform' and any other value sample uniformly
             return {
                 'scaling': 1+np.random.uniform(-self.scale,self.scale),
                 'rotation': tuple([np.deg2rad(np.random.uniform(-r,r)) for r in
@@ -91,7 +93,8 @@ class Translate_3DNumpy(_TensorProcessing):
 
         result = []
         for image in ipt[self.field_oi]:
-            image = sni.shift(image, self.shifts, order=self.order, cval=image[0,0,0])
+            image = ndimage_shift(image, self.shifts, order=self.order,
+                                  cval=image[0,0,0])
             result.append(image)
 
         ipt[self.field_oi] = result
@@ -112,14 +115,17 @@ class Rotate_3DNumpy(_TensorProcessing):
         result = []
         for image in ipt[self.field_oi]:
             angle = self.angles[0]
-            image = sni.rotate(image, angle, order=self.order, axes=(0, 1),
-                               reshape=False, cval=image[0,0,0])
+            image = ndimage_rotate(image, angle, order=self.order,
+                                   axes=(0, 1), reshape=False,
+                                   cval=image[0,0,0])
             angle = self.angles[1]
-            image = sni.rotate(image, angle, order=self.order, axes=(0, 2),
-                               reshape=False, cval=image[0,0,0])
+            image = ndimage_rotate(image, angle, order=self.order,
+                                   axes=(0, 2), reshape=False,
+                                   cval=image[0,0,0])
             angle = self.angles[2]
-            image = sni.rotate(image, angle, order=self.order, axes=(1, 2),
-                               reshape=False, cval=image[0,0,0])
+            image = ndimage_rotate(image, angle, order=self.order,
+                                   axes=(1, 2), reshape=False,
+                                   cval=image[0,0,0])
             result.append(image)
         ipt[self.field_oi] = result
         return ipt
@@ -164,11 +170,11 @@ class Scale_3DNumpy(_TensorProcessing):
                 else:
                     out = np.ones_like(img)
                 out[top:top+zh, left:left+zw, far:far+zd] = \
-                    sni.zoom(img, zoom_tuple, order=self.order)
+                    ndimage_zoom(img, zoom_tuple, order=self.order)
 
             # Zooming in
             elif self.scale > 1:
-                out = sni.zoom(img, zoom_tuple, order=self.order)
+                out = ndimage_zoom(img, zoom_tuple, order=self.order)
                 top_start, left_start, far_start = [int(ind) for ind in
                                                     np.round((np.array(
                                                         out.shape)-np.array(img.shape))/2).tolist()]
@@ -184,12 +190,12 @@ class Scale_3DNumpy(_TensorProcessing):
         ipt[self.field_oi] = result
         return ipt
 
-class AddGaussainNoise(_TensorProcessing):
+class AddGaussianNoise(_TensorProcessing):
     '''
     add gaussian noise to the numpy array
     '''
     def __init__(self, std=1, field_oi='X'):
-        super(AddGaussainNoise, self).__init__()
+        super(AddGaussianNoise, self).__init__()
         self.std = std
         self.field_oi = field_oi
 
@@ -198,3 +204,6 @@ class AddGaussainNoise(_TensorProcessing):
         ipt[self.field_oi] = [np_ar + np.random.normal(0.0, self.std, np_ar.shape)
                               for np_ar in ipt[self.field_oi]]
         return ipt
+
+
+AddGaussainNoise = AddGaussianNoise   # deprecated spelling, kept for old scripts
