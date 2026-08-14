@@ -29,15 +29,15 @@ class OrdinalCor_Practitioner_config(project_config):
         :param boxplot: bool. indicator to generate a boxplot
         :param kwargs:
         '''
-        super(OrdinalCor_Practitioner_config, self).__init__(
-            'ML_CorrelationEvalPractitioner'
-        )
-        # statistical parameters
-        self.exog = exogenous
-        self.endog = endogenous
-        self.cat_names = ordinal_label
-        self.kndll_tau = kendall_tau
-        self.sprmn_r = spearman_r
+        kwargs.setdefault('config_type', 'ML_CorrelationEvalPractitioner')
+        super(OrdinalCor_Practitioner_config, self).__init__(**kwargs)
+        # statistical parameters — stored under the parameter's own name so
+        # save/load round-trips
+        self.exogenous = exogenous
+        self.endogenous = endogenous
+        self.ordinal_label = ordinal_label
+        self.kendall_tau = kendall_tau
+        self.spearman_r = spearman_r
 
         # plotting parameters
         self.graph_name = graph_name
@@ -51,7 +51,7 @@ class Ordinal_Correlation_Practitioner():
                  io_manager):
         '''
         constructor for the ordinal correlation practitioner
-        :param config: confiuration file
+        :param config: configuration file
         :param dt_processor: the data processor for the project
         :param io_manager: the inputoutput manager for the project
         '''
@@ -66,20 +66,21 @@ class Ordinal_Correlation_Practitioner():
         :param dt: input data
         :return: list of a 5 number summary
         '''
-        max = np.max(dt)
-        min = np.min(dt)
+        max_val = np.max(dt)
+        min_val = np.min(dt)
         quartiles = np.percentile(dt, [25, 50, 75])
-        return [min] + list(quartiles) + [max]
+        return [min_val] + list(quartiles) + [max_val]
 
-    def plot_name(self, type, dtype):
+    def plot_name(self, plot_type, dtype):
         '''
         generate the name of the plot
-        :param type: the type of plot being saved
+        :param plot_type: the type of plot being saved
         :param dtype: the datatype to save the plot as
         :return: name of the plot that will be saved
         '''
-        _name = [] if self.config.graph_name==None else [self.config.graph_name]
-        _name.extend([type, self.config.exog])
+        _name = [] if self.config.graph_name is None \
+            else [self.config.graph_name]
+        _name.extend([plot_type, self.config.exogenous])
         return '.'.join(['_'.join(_name), dtype])
 
     def histogram_of_x(self, x):
@@ -93,7 +94,7 @@ class Ordinal_Correlation_Practitioner():
         plt.hist(hist_plot_data, bins=100)
 
         plt.ylabel('Frequency')
-        plt.title(self.config.endog)
+        plt.title(self.config.endogenous)
         plt.savefig(
             os.path.join(self.io_manager.root,
                          self.plot_name('hist', 'pdf'))
@@ -114,19 +115,19 @@ class Ordinal_Correlation_Practitioner():
         ### BoxPlotWork
         data = [pt for pt in x]
         box_plot_data = [
-            [sample[1] for sample in data if self.config.cat_names[sample[0]]
+            [sample[1] for sample in data if self.config.ordinal_label[sample[0]]
              == cat]
-            for cat in self.config.cat_names]
+            for cat in self.config.ordinal_label]
         plt.boxplot(box_plot_data, vert=True, patch_artist=True,
-                    whis=1.5, labels=self.config.cat_names)
+                    whis=1.5, labels=self.config.ordinal_label)
         max_val = np.max([x[1] for x in data])
         if max_val < 0.55:
             plt.ylim([-0.05, 0.55])
         elif max_val < 1.05:
             plt.ylim([-0.05, 1.05])
 
-        plt.ylabel(self.config.endog)
-        plt.title(self.config.exog)
+        plt.ylabel(self.config.endogenous)
+        plt.title(self.config.exogenous)
         plt.savefig(
             os.path.join(self.io_manager.root,
                          self.plot_name('boxplot', 'pdf'))
@@ -140,7 +141,7 @@ class Ordinal_Correlation_Practitioner():
 
     def calculate_kendall_tau(self, dt, res_dict):
         '''
-        run kendall tau statisical analysis on dt
+        run kendall tau statistical analysis on dt
         :param dt: the dataset to run analysis on. List of tuples.
         :param res_dict: the dictionary to save the results. Must have a
         'Coefficient', 'P_value', and '95%_CI' keys
@@ -157,6 +158,18 @@ class Ordinal_Correlation_Practitioner():
         res_dict['P_value'].append(test_result[1])
 
         # calculate the 95% confidence interval
+        # NOTE: this reuses the Pearson-r Fisher-z asymptotic standard
+        # error 1/sqrt(n-3) as an approximation; Kendall's tau has a
+        # different asymptotic variance (commonly approximated as
+        # sqrt(0.437/(n-4)), Fieller et al.). Changing the formula would
+        # change previously reported CIs, so it is documented rather than
+        # silently swapped.
+        if abs(test_result[0]) == 1.0:
+            # Fisher z is undefined at tau = +/-1 (division by zero)
+            print('ML Practitioner: WARNING: kendall tau is exactly +/-1; '
+                  'the Fisher-z confidence interval is undefined.')
+            res_dict['95%_CI'].append([np.nan, np.nan])
+            return res_dict
         r = 0.5 * np.log((1 + test_result[0]) / (1 - test_result[0]))
         num = len(dt)
         stderr = 1.0 / np.sqrt(num - 3)
@@ -171,7 +184,7 @@ class Ordinal_Correlation_Practitioner():
 
     def calculate_spearman_r(self, dt, res_dict):
         '''
-        run spearman r statisical analysis on dt
+        run spearman r statistical analysis on dt
         :param dt: the dataset to run analysis on. List of tuples.
         :param res_dict: the dictionary to save the results. Must have a
         'Coefficient', 'P_value', and '95%_CI' keys
@@ -189,6 +202,12 @@ class Ordinal_Correlation_Practitioner():
 
         # calculate the 95% confidence interval
         r = test_result[0]
+        if abs(r) == 1.0:
+            # Fisher z (arctanh) is undefined at r = +/-1
+            print('ML Practitioner: WARNING: spearman r is exactly +/-1; '
+                  'the Fisher-z confidence interval is undefined.')
+            res_dict['95%_CI'].append([np.nan, np.nan])
+            return res_dict
         num = len(dt)
         stderr = 1.0 / np.sqrt(num - 3)
         delta = 1.96 * stderr
@@ -212,13 +231,13 @@ class Ordinal_Correlation_Practitioner():
             dataset = input_data_set
 
         if 'y' in dataset.columns:
-            dataset = dataset.rename(columns={'y':self.config.endog})
+            dataset = dataset.rename(columns={'y':self.config.endogenous})
         if 'X' in dataset.columns:
-            dataset = dataset.rename(columns={'X':self.config.exog})
-        dataset = dataset[[self.config.endog, self.config.exog]].dropna()
+            dataset = dataset.rename(columns={'X':self.config.exogenous})
+        dataset = dataset[[self.config.endogenous, self.config.exogenous]].dropna()
         data = [tuple(x) for x in
-                dataset[[self.config.exog, self.config.endog]].values]
-        data = [(self.config.cat_names.index(x[0]), x[1]) for x in data]
+                dataset[[self.config.exogenous, self.config.endogenous]].values]
+        data = [(self.config.ordinal_label.index(x[0]), x[1]) for x in data]
 
         if self.config.histogram:
             self.histogram_of_x(data)
@@ -229,8 +248,8 @@ class Ordinal_Correlation_Practitioner():
         seperated_data = [
             [sample[1]
              for sample in data
-             if self.config.cat_names[sample[0]] == cat]
-            for cat in self.config.cat_names
+             if self.config.ordinal_label[sample[0]] == cat]
+            for cat in self.config.ordinal_label
         ]
         ### Spearman and Kendall Tests
         save_data = {
@@ -246,9 +265,9 @@ class Ordinal_Correlation_Practitioner():
             '95%_CI': []
         }
         measures = []
-        if self.config.kndll_tau:
+        if self.config.kendall_tau:
             measures.append('Kendall Tau')
-        if self.config.sprmn_r:
+        if self.config.spearman_r:
             measures.append('Spearman Correlation')
         if len(measures)>0:
             for measure in measures:

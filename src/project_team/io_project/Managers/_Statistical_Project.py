@@ -2,21 +2,28 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+
+class LabelNotFoundError(KeyError):
+    '''
+    Raised when a configured X or y column is missing from the data.
+    Caught by managers that can tolerate the miss (for example inference
+    data without ground-truth labels).
+    '''
+
+
 class _Statistical_Project():
     '''
     Parent class of a statistical project.
     Used to collect shared function used by the following types of projects:
     - train (val) test split/ deployment
     - k fold validation
-    - hyper parameter grid seraching
+    - hyper parameter grid searching
     '''
     def __init__(self,
                  config):
         '''
         :param config: an io_config
         '''
-        self.config = config
-
         self.config = config
         self.root = os.path.join(config.project_folder, config.experiment_name)
         if not os.path.exists(self.root):
@@ -32,54 +39,54 @@ class _Statistical_Project():
         if not os.path.exists(self.root):
             os.makedirs(self.root)
 
+    def _remap_column(self, df, col_spec, target_name):
+        '''
+        rename (or assemble, for a list of columns) the configured column
+        into the canonical target name used by all project team members
+        :param df: dataframe to remap
+        :param col_spec: the configured column name (str) or list of names
+        :param target_name: the canonical name, 'X' or 'y'
+        :return: the remapped dataframe
+        '''
+        if isinstance(col_spec, list):
+            missing = [c for c in col_spec if c not in df.columns]
+            if missing:
+                raise LabelNotFoundError(
+                    'The ' + target_name + ' columns ' + str(missing) +
+                    ' were not found in the data. Available columns: ' +
+                    str(list(df.columns)))
+            df[target_name] = df[col_spec].values.tolist()
+            return df
+        if isinstance(col_spec, str) and col_spec in df.columns:
+            return df.rename(columns={col_spec: target_name})
+        raise LabelNotFoundError(
+            'The configured ' + target_name + ' column ' + repr(col_spec) +
+            ' was not found in the data. Available columns: ' +
+            str(list(df.columns)))
+
     def remap_X(self, df):
         '''
         the function will change the column name of the X variable in the dataframe to 'X' so it is generic and can be
         used consistently in project team members
         :param df: dataframe you wish to change the X column to 'X'
-        :return:
+        :return: the remapped dataframe
         '''
-        mapper = {}
-        if type(self.config.X)==list:
-            try:
-                df['X'] = df[self.config.X].values.tolist()
-            except Exception as e:
-                if 'are in the [columns]' in str(e):
-                    raise Exception(str(e) + ' data_set columns are: ' +
-                                    str(df.columns))
-                else:
-                    raise e
-        elif type(self.config.X)==str and self.config.X in df.columns:
-            mapper[self.config.X] = 'X'
-        else:
-            raise Exception(' The X label is not in the data_csv_location '
-                            'file. ' + str(self.config.data_csv_location))
-        df = df.rename(columns=mapper)
-        return df
+        return self._remap_column(df, self.config.X, 'X')
 
     def remap_y(self, df):
         '''
         the function will change the column name of the y variable in the dataframe to 'y' so it is generic and can be
         used consistently in project team members
-        :param df: dataframe you wish to change the X column to 'y'
-        :return:
+        :param df: dataframe you wish to change the y column to 'y'
+        :return: the remapped dataframe
         '''
-        mapper = {}
-        if type(self.config.y)==list:
-            df['y'] = df[self.config.y].values.tolist()
-        elif type(self.config.y)==str and self.config.y in df.columns:
-            mapper[self.config.y] = 'y'
-        else:
-            raise Exception(' The y label is not in the data_csv_location '
-                            'file. ' + str(self.config.data_csv_location))
-        df = df.rename(columns=mapper)
-        return df
+        return self._remap_column(df, self.config.y, 'y')
 
     def stratified_data_split(self, list_examples, stratification):
         '''
         stratified split of data for training, val, and test, given the portions that are declared in the config.
         :param list_examples: list of example labels from the 'group_data_by' config setting
-        :param stratification: a list of coresponding values that stratification is based on
+        :param stratification: a list of corresponding values that stratification is based on
         :return: train_list, val_list, and test_list of the group_data_by characteristic
         '''
         val_list = None
@@ -150,41 +157,51 @@ class _Statistical_Project():
         the function will determine the stratification quality the data has
         given the sessions and stratify_by
         :param data: dataset
-        :param sessions: list of individual unqiue identifiers based on
+        :param sessions: list of individual unique identifiers based on
         group_data_by
         :return: a list of the stratification quality based on stratify_by
         '''
         tmp_strtfy_by = self.config.stratify_by
         if tmp_strtfy_by == self.config.y:
             tmp_strtfy_by = 'y'
-        assert type(tmp_strtfy_by) == str, \
-            "Stratify by value must be string."
-        assert tmp_strtfy_by in data.columns, \
-            "Stratify by value must be a column in your dataset."
-        return data.iloc[
-            [getattr(data, self.config.group_data_by).eq(x).idxmax()
-             for x in sessions]
-        ][tmp_strtfy_by].to_list()
+        if not isinstance(tmp_strtfy_by, str):
+            raise TypeError('stratify_by must be a string column name, '
+                            'got ' + repr(tmp_strtfy_by))
+        if tmp_strtfy_by not in data.columns:
+            raise ValueError('stratify_by column ' + repr(tmp_strtfy_by) +
+                             ' is not in the data. Available columns: ' +
+                             str(list(data.columns)))
+        try:
+            return data.iloc[
+                [getattr(data, self.config.group_data_by).eq(x).idxmax()
+                 for x in sessions]
+            ][tmp_strtfy_by].to_list()
+        except IndexError as e:
+            raise IndexError(
+                'Using row index to group_data_by requires that the index '
+                'of the dataframe be 0 to n. Use df.reset_index() to avoid '
+                'this IndexError. ') from e
 
     def load_rename_group_data(self):
         '''
         a function to load the data csv file, rename x and y and acquire the
         amount of examples in the dataframe
-        :return: dt_fl: data_file, sssn_lst: session_list
+        :return: data_file, session_list
         '''
         # load the dataframe
-        if type(self.config.data_csv_location) == pd.DataFrame:
-            dt_fl = self.config.data_csv_location
+        if isinstance(self.config.data_csv_location, pd.DataFrame):
+            data_file = self.config.data_csv_location
         elif os.path.exists(self.config.data_csv_location):
-            dt_fl = pd.read_csv(self.config.data_csv_location, na_filter=False)
+            data_file = pd.read_csv(self.config.data_csv_location,
+                                    na_filter=False)
         else:
             raise Exception('The data_csv_location given is not a pandas '
                             'dataframe or a file that exists. ')
 
         # designate X and y
-        dt_fl = self.remap_X(dt_fl)
-        dt_fl = self.remap_y(dt_fl)
+        data_file = self.remap_X(data_file)
+        data_file = self.remap_y(data_file)
 
-        # determine how to group data by and fine the grouped data examples
-        dt_fl, sssn_lst = self.get_session_list(dt_fl)
-        return dt_fl, sssn_lst
+        # determine how to group data by and find the grouped data examples
+        data_file, session_list = self.get_session_list(data_file)
+        return data_file, session_list

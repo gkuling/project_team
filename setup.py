@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from setuptools import setup, find_packages
 
 setup(
@@ -5,27 +7,32 @@ setup(
     version='1.0.0',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    url='',
+    url='https://github.com/gkuling/project_team',
     license='MIT License',
     author='Grey Kuling',
     author_email='gkuling@gmail.com',
-    description='',
-    long_description="foo bar baz",
+    description='A lightweight personal research harness for organizing, '
+                'training, and persisting PyTorch and statistical ML '
+                'experiments.',
+    long_description=Path(__file__).with_name('README.md').read_text(),
+    long_description_content_type='text/markdown',
     install_requires=[
         'torch',
         'torchvision',
-        'torchaudio',
         'pandas',
         'numpy',
         'tqdm',
         'scikit-image',
         'scikit-learn',
-        'transformers',
-        'tokenizers',
+        'scipy',
+        'Pillow',
+        # The config system subclasses PretrainedConfig; 5.x removed
+        # internals this package's save/load path was written against.
+        'transformers>=4.30,<5',
         'matplotlib',
-        'statsmodels',
-        'nltk',
-        'chardet',
     ],
-    python_requires='>=3.8',
+    extras_require={
+        'dev': ['pytest', 'pytest-cov'],
+    },
+    python_requires='>=3.10',
 )

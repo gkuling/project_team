@@ -1,3 +1,5 @@
+import ast
+
 from PIL import Image
 import numpy as np
 
@@ -7,6 +9,40 @@ from skimage.transform import resize
 
 from . import _TensorProcessing
 from copy import deepcopy
+
+__all__ = ['OpenImage_file', 'Resample_Image_shape', 'Reverse_Resample_Image',
+           'Cast_numpy', 'ToNumpy', 'ImageToNumpy', 'NumpyToImage',
+           'Numpy_resize', 'Pad_to_Size_numpy', 'Reverse_Pad_to_Size_numpy',
+           'Add_Channel', 'ToTensor', 'OneHotEncode', 'OneHotEncode_Seg',
+           'resolve_dtype']
+
+# registry mapping dtype strings from configs to numpy dtypes. A registry
+# (instead of eval) accepts every historical spelling and fails with a
+# clear message listing what is valid.
+_DTYPES = {}
+for _name in ('float16', 'float32', 'float64', 'uint8', 'int8', 'int16',
+              'int32', 'int64', 'bool_'):
+    _dtype = getattr(np, _name)
+    _DTYPES[_name] = _dtype
+    _DTYPES['np.' + _name] = _dtype
+    _DTYPES['numpy.' + _name] = _dtype
+
+
+def resolve_dtype(dtype_spec):
+    '''
+    turn a config dtype value into a numpy dtype
+    :param dtype_spec: a numpy dtype, or a string like 'np.float32',
+        'numpy.float32' or 'float32'
+    :return: the numpy dtype
+    '''
+    if isinstance(dtype_spec, str):
+        if dtype_spec not in _DTYPES:
+            raise ValueError(
+                repr(dtype_spec) + ' is not a recognized dtype string. '
+                'Valid options: ' + ', '.join(sorted(_DTYPES)))
+        return _DTYPES[dtype_spec]
+    return dtype_spec
+
 
 class OpenImage_file(_TensorProcessing):
     '''
@@ -18,23 +54,27 @@ class OpenImage_file(_TensorProcessing):
 
     def __call__(self, ipt):
 
-        if type(ipt[self.field_oi])==str and os.path.exists(ipt[self.field_oi]):
+        if isinstance(ipt[self.field_oi], str) and \
+                os.path.exists(ipt[self.field_oi]):
             ipt[self.field_oi + '_location'] = [ipt[self.field_oi]]
             ipt[self.field_oi] = [Image.open(ipt[self.field_oi])]
         else:
-            if type(ipt[self.field_oi])!=list:
+            if not isinstance(ipt[self.field_oi], list):
                 try:
-                    ipt[self.field_oi] = eval(ipt[self.field_oi])
-                except:
-                    raise ValueError('The Sample Location is not a python '
-                                     'object. ex. list, dict, etc.')
-            ipt[self.field_oi + '_location'] = [img if
-                                                type(img)!=np.array else
-                                                'Image Given Unknown ' \
-                                                'Location'
-                                                for img in ipt[self.field_oi]]
+                    ipt[self.field_oi] = ast.literal_eval(
+                        ipt[self.field_oi])
+                except (ValueError, SyntaxError, TypeError):
+                    raise ValueError(
+                        'The ' + self.field_oi + ' value ' +
+                        repr(ipt[self.field_oi]) + ' is not an existing '
+                        'file path or a python literal (ex. a list of '
+                        'paths).')
+            ipt[self.field_oi + '_location'] = [
+                img if not isinstance(img, np.ndarray)
+                else 'Image Given Unknown Location'
+                for img in ipt[self.field_oi]]
             ipt[self.field_oi] = [Image.open(img) if
-                                  type(img)!=np.array else
+                                  not isinstance(img, np.ndarray) else
                                   img
                                   for img in ipt[self.field_oi]]
 
@@ -50,16 +90,12 @@ class Resample_Image_shape(_TensorProcessing):
         self.field_oi= field_oi
         self.new_size = list(new_size)
         self.mode = mode
-        if type(output_dtype)==str:
-            try:
-                output_dtype = eval(output_dtype)
-            except:
-                raise Exception('The datatype input is not a type that can be '
-                                'put through eval()')
-        self.output_dtype = output_dtype
+        self.output_dtype = resolve_dtype(output_dtype)
 
-    def get_reciprical(self, **kwargs):
-        return NotImplementedError()
+    def get_reciprocal(self, **kwargs):
+        raise NotImplementedError(
+            'Resample_Image_shape has no reciprocal: the reverse target '
+            'size is per-sample metadata, not a fixed shape.')
 
     def resample_function(self, image, meta_data=None):
         if not meta_data:
@@ -68,8 +104,11 @@ class Resample_Image_shape(_TensorProcessing):
             meta_data = {'orig_size': [int(v) for v in orig_size],
                          'new_size': [int(v) for v in new_size]}
 
-        return image.resize(self.new_size, self.mode), \
-               meta_data
+        resized = image.resize(self.new_size, self.mode)
+        if self.output_dtype is not None:
+            resized = Image.fromarray(
+                np.array(resized).astype(self.output_dtype))
+        return resized, meta_data
 
     def __call__(self, ipt):
         res = []
@@ -122,16 +161,16 @@ class Cast_numpy(_TensorProcessing):
         self.field_oi = field_oi
 
     def __call__(self, ipt):
-        if type(ipt[self.field_oi])==np.ndarray:
+        if isinstance(ipt[self.field_oi], np.ndarray):
             ipt[self.field_oi] = ipt[self.field_oi].astype(self.output_dtype)
-        elif type(ipt[self.field_oi])==list:
+        elif isinstance(ipt[self.field_oi], list):
             ipt[self.field_oi] = [img.astype(self.output_dtype)
                                   for img in ipt[self.field_oi]]
-        elif type(ipt[self.field_oi])==int or type(ipt[self.field_oi])==float:
+        elif isinstance(ipt[self.field_oi], (int, float)):
             ipt[self.field_oi] = np.asarray(
                 [ipt[self.field_oi]]
             ).astype(self.output_dtype)
-        elif type(ipt[self.field_oi])==dict:
+        elif isinstance(ipt[self.field_oi], dict):
             ipt[self.field_oi] = {
                 ky:ipt[self.field_oi][ky].astype(self.output_dtype)
                 if isinstance(ipt[self.field_oi][ky], np.ndarray)
@@ -165,7 +204,7 @@ class ImageToNumpy(_TensorProcessing):
         super(ImageToNumpy, self).__init__()
         self.field_oi = field_oi
 
-    def get_reciprical(self, **kwargs):
+    def get_reciprocal(self, **kwargs):
         return NumpyToImage(**kwargs)
 
     def __call__(self, ipt):
@@ -181,7 +220,7 @@ class NumpyToImage(_TensorProcessing):
         self.field_oi = field_oi
         self.mode= mode
 
-    def get_reciprical(self, **kwargs):
+    def get_reciprocal(self, **kwargs):
         return ImageToNumpy(**kwargs)
 
     def __call__(self, ipt):
@@ -225,19 +264,18 @@ class Pad_to_Size_numpy(_TensorProcessing):
         self.centre = centre
         self.value = fill_value
 
-    def get_reciprical(self, **kwargs):
+    def get_reciprocal(self, **kwargs):
         return Reverse_Pad_to_Size_numpy(**kwargs)
 
     def get_bounds_of_axis(self, axis, img):
         noise = 0.01*img.max()
         thr_img = img>noise
         mv_ax = np.moveaxis(thr_img, axis, 0)
-        mv_ax.reshape(mv_ax.shape[0],-1).sum(-1)
         beginning = mv_ax.reshape(mv_ax.shape[0],-1).sum(-1).argmax()
         if beginning+self.shape[axis]<=img.shape[axis]:
-            return (beginning, beginning+self.shape[0])
+            return (beginning, beginning+self.shape[axis])
         else:
-            return (0, self.shape[0])
+            return (0, self.shape[axis])
 
     def __call__(self, ipt):
 
@@ -287,7 +325,7 @@ class Pad_to_Size_numpy(_TensorProcessing):
 
         temp = ipt[self.field_oi]
 
-        start = [np.ones(self.shape, dtype=t.dtype) * t.flatten()[0] for t in
+        start = [np.full(self.shape, self.value, dtype=t.dtype) for t in
                  temp]
 
         for i in range(len(temp)):
@@ -331,17 +369,12 @@ class Reverse_Pad_to_Size_numpy(_TensorProcessing):
                     _ in range(len(ipt[self.field_oi]))]
         op_indices = ipt['padding_meta_data']['scan_indices']
         ip_indices = ipt['padding_meta_data']['opt_indices']
+        # build the slices from the recorded dimensionality so 2D and 3D
+        # arrays both reverse correctly
+        out_slices = tuple(slice(a, b) for a, b in op_indices)
+        in_slices = tuple(slice(a, b) for a, b in ip_indices)
         for i in range(len(ipt[self.field_oi])):
-            new_segm[i][
-            op_indices[0][0]:op_indices[0][1],
-            op_indices[1][0]:op_indices[1][1],
-            op_indices[2][0]:op_indices[2][1]
-            ] = \
-                ipt[self.field_oi][i][
-                ip_indices[0][0]:ip_indices[0][1],
-                ip_indices[1][0]:ip_indices[1][1],
-                ip_indices[2][0]:ip_indices[2][1]
-                ]
+            new_segm[i][out_slices] = ipt[self.field_oi][i][in_slices]
         ipt[self.field_oi] = new_segm
         return ipt
 
@@ -369,7 +402,7 @@ class ToTensor(_TensorProcessing):
         self.dtype = dtype
 
     def __call__(self, ipt):
-        if type(ipt[self.field_oi])==dict:
+        if isinstance(ipt[self.field_oi], dict):
             ipt[self.field_oi] = {
                 ky: torch.tensor(ipt[self.field_oi][ky], dtype=self.dtype)
                 for ky in ipt[self.field_oi].keys()
@@ -389,8 +422,11 @@ class OneHotEncode(_TensorProcessing):
         self.field_oi = field_oi
 
     def __call__(self, ipt):
-        # Fast wrote this, it maybe completely wrong. Apologies
-        assert type(ipt[self.field_oi])==int
+        if not isinstance(ipt[self.field_oi], (int, np.integer)):
+            raise TypeError(
+                'OneHotEncode expects an integer class label in field ' +
+                repr(self.field_oi) + ', got ' +
+                type(ipt[self.field_oi]).__name__ + '.')
 
         new_y = [0] * self.number_of_classes
 
@@ -408,12 +444,18 @@ class OneHotEncode_Seg(_TensorProcessing):
         self.field_oi = field_oi
 
     def __call__(self, ipt):
-        assert ipt[self.field_oi].shape[0]==1
+        if ipt[self.field_oi].shape[0] != 1:
+            raise ValueError(
+                'OneHotEncode_Seg expects a single-channel label map, got '
+                'shape ' + str(ipt[self.field_oi].shape) + '.')
 
         def one_hotEncode(im):
+            # channel index must equal the class id: enumerating
+            # np.unique(im) would shift channels whenever a class is
+            # absent from this particular map
             one_hot = np.zeros((self.max_class, *im.shape))
-            for i, unique_value in enumerate(np.unique(im)):
-                one_hot[i,...][im == unique_value] = 1
+            for c in range(self.max_class):
+                one_hot[c, ...][im == c] = 1
             return one_hot
         if self.max_class>1:
             ipt[self.field_oi] = one_hotEncode(ipt[self.field_oi][0])

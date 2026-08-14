@@ -7,8 +7,8 @@ perform a Train-Test Split experiment
 
 Input: a working_dir (working directory) to perform the experiment in
 Output: in the working directory there will be configs for the manager,
-processor, practitioner, and model. Checkpoint saves will be intheir own
-folder. Datsets will be saved in individual csv files. Final model weights as a
+processor, practitioner, and model. Checkpoint saves will be in their own
+folder. Datasets will be saved in individual csv files. Final model weights as a
 pth file.
 '''
 
@@ -20,12 +20,12 @@ from sklearn.metrics import accuracy_score
 
 import project_team as proteam
 import os
-from default_arguements import dt_args, ml_args, mdl_args
+from default_arguments import dt_args, ml_args, mdl_args
 
 r_seed = 20230117
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--working_dir',type=str,
-                    default=os.getcwd(),
+                    default=os.path.join(os.getcwd(), 'project_team_runs'),
                     help='The current directory to save models, and configs '
                          'of the experiment')
 parser.add_argument('--start_from_checkpoint', action='store_true',
@@ -35,11 +35,11 @@ opt = parser.parse_args()
 # Prepare data if not already saved and set up
 if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
     if not os.path.exists(os.path.join(opt.working_dir, 'data')):
-        os.mkdir(os.path.join(opt.working_dir, 'data'))
+        os.makedirs(os.path.join(opt.working_dir, 'data'))
 
-    dataset1 = datasets.MNIST('../data', train=True, download=True)
+    dataset1 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=True, download=True)
 
-    dataset2 = datasets.MNIST('../data', train=False)
+    dataset2 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=False)
     all_data = []
     cnt = 0
     for ex in dataset1:

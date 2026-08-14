@@ -2,6 +2,8 @@ from . import _TensorProcessing
 import transformers as tk
 from copy import deepcopy
 
+__all__ = ['HG_Tokenizer']
+
 class HG_Tokenizer(_TensorProcessing):
     '''
     tokenize the string using a tokenizer built by the hugging face library
@@ -23,7 +25,10 @@ class HG_Tokenizer(_TensorProcessing):
         self.truncation = truncation
 
     def __call__(self, ipt):
-        assert type(ipt[self.field_oi])==str, 'A tokenizer must be ran on text'
+        if not isinstance(ipt[self.field_oi], str):
+            raise TypeError('A tokenizer must be run on text; field ' +
+                            repr(self.field_oi) + ' holds ' +
+                            type(ipt[self.field_oi]).__name__)
 
         ipt[self.field_oi + '_originaltext'] = deepcopy([ipt[self.field_oi]])
         result = self.tokenizer(ipt[self.field_oi],

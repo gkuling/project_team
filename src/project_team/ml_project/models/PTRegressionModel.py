@@ -11,10 +11,10 @@ class PTRegression_config(project_config):
                  output_style='continuous',
                  **kwargs):
         '''
-        Pyotorhc model with a regression head
+        Pytorch model with a regression head
         :param encoder: a name for the given encoder or "flatten" which will
-        just flattent all dimensions after batchsize
-        :param regresser_input: input size for regression head
+        just flatten all dimensions after batchsize
+        :param regressor_input: input size for regression head
         :param regressor_output: output size for regression head
         :param flatten_assist: assistance in flattening before sending it
         through the regression head. default: False
@@ -26,7 +26,8 @@ class PTRegression_config(project_config):
             'binary': a 2 length output where the likelihood of 1 is the
             regression amount.
         '''
-        super(PTRegression_config, self).__init__('model_PTRegression')
+        kwargs.setdefault('config_type', 'model_PTRegression')
+        super(PTRegression_config, self).__init__(**kwargs)
         self.encoder = encoder
         self.regressor_input = regressor_input
         self.flatten_assist = flatten_assist
@@ -34,25 +35,29 @@ class PTRegression_config(project_config):
         if output_style!='continuous' and regressor_output==1:
             print('WARNING: PTRegression config: output style is not '
                   'continuous and your output size is 1. Output size must be '
-                  '>1 to truely perform correctly. ')
+                  '>1 to truly perform correctly. ')
         self.regressor_output = regressor_output
 
 
 
 class PTRegressionModel(nn.Module):
     def __init__(self,
-                 config=PTRegression_config(),
+                 config=None,
                  encoder=None):
         '''
-        pytrochr egression model
-        :param config: confiuguration from above
+        pytorch regression model
+        :param config: configuration from above
         :param encoder: model encoder
         '''
         super(PTRegressionModel, self).__init__()
+        if config is None:
+            config = PTRegression_config()
         self.config = config
 
-        # if a custom encoder is disclosed, it must be given
-        assert config.encoder=='custom' and encoder is not None
+        # a custom encoder requires an encoder module to be passed in
+        if config.encoder == 'custom' and encoder is None:
+            raise ValueError("config.encoder=='custom' requires an encoder "
+                             "module to be passed to PTRegressionModel.")
         if encoder is not None:
             self.encoder = encoder
         elif config.encoder=='flatten':
@@ -61,7 +66,7 @@ class PTRegressionModel(nn.Module):
             )
         else:
             raise NotImplementedError(
-                str(config.encoder) + ' is not an implemented in '
+                str(config.encoder) + ' is not implemented in '
                                       'PTRegressionModel ')
         # have a flattener if assistance is needed
         if self.config.flatten_assist:
@@ -92,8 +97,8 @@ class PTRegressionModel(nn.Module):
         forward pass on x
         :param x: input tensor
         :param return_latent: bool. Whether to return the model latent tensor
-        from before the regssion head
-        :return: output of the model and laten space is requested
+        from before the regression head
+        :return: output of the model, and the latent space if requested
         '''
 
         # obtain the latent space

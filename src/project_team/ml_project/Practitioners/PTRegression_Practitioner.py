@@ -5,7 +5,7 @@ import gc
 from scipy.special import expit as sigmoid, softmax
 import numpy as np
 
-from project_team.project_config import project_config, is_Primitive
+from project_team.project_config import project_config, is_primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
 from torchvision import transforms
 from project_team.dt_project.dt_processing import ToTensor, Cast_numpy
@@ -18,13 +18,12 @@ class PTRegression_Practitioner_config(PTPractitioner_config,
         Specific configuration for running pytorch regression
         practitioner
         '''
-        super(PTRegression_Practitioner_config, self).__init__(
-            config_type ='ML_PTRegressionPractitioner', **kwargs
-        )
+        kwargs.setdefault('config_type', 'ML_PTRegressionPractitioner')
+        super(PTRegression_Practitioner_config, self).__init__(**kwargs)
 
 class PTRegression_Practitioner(PT_Practitioner):
     def __init__(self, model, io_manager, data_processor,
-                 trainer_config=PTRegression_Practitioner_config()):
+                 trainer_config=None):
         '''
         constructor of the pytorch regression practitioner. Inherits the
         pytorch practitioner
@@ -34,14 +33,22 @@ class PTRegression_Practitioner(PT_Practitioner):
         :param trainer_config: the configuration that holds parameters for a
         practitioner
         '''
+        if trainer_config is None:
+            trainer_config = PTRegression_Practitioner_config()
         super(PTRegression_Practitioner, self).__init__(model=model,
                                                 io_manager=io_manager,
                                                 data_processor=data_processor,
                                                 trainer_config=trainer_config)
         self.practitioner_name = 'PTRegression'
-        # Standard transfroms for training would be in ensure all input and
-        # out put are tensors
-        self.subclass_standard_transforms = [
+
+    def get_subclass_standard_transforms(self):
+        '''
+        standard transforms ensuring the y value ends up a float tensor.
+        Declared as a method override (not an attribute set after __init__)
+        so the parent picks it up when it builds standard_transforms.
+        :return: list of transforms
+        '''
+        return [
             Cast_numpy(field_oi='y', data_type=np.float32),
             ToTensor(field_oi='y')
         ]
@@ -49,10 +56,9 @@ class PTRegression_Practitioner(PT_Practitioner):
     def validate_model(self, val_dataloader):
         '''
         function that will run validation of the model
-        :param val_dataloader: validation data laoder
+        :param val_dataloader: validation data loader
         :return: the overall validation loss
         '''
-        print('')
         self.model.eval()
         epoch_iterator = tqdm(val_dataloader, desc="  Validation",
                               position=0, leave=True)
@@ -77,14 +83,14 @@ class PTRegression_Practitioner(PT_Practitioner):
                     {'loss': np.round(loss,  decimals=2).tolist()}
                 )
                 vl_lss.append(loss)
-        # calculate average loss for the validaiton data
+        # calculate average loss for the validation data
         vl_loss = np.array(vl_lss).mean(0)
         print(" ML Message: Validation Loss: " + str(vl_loss))
         return vl_loss[0]
 
     def run_inference(self, return_output=False):
         '''
-        run inference on the iference dataset in the processor
+        run inference on the inference dataset in the processor
         :param: return_output: bool to indicate logits are desired with the
         results
         :return: all prediction results are saved on the data processor
@@ -142,17 +148,20 @@ class PTRegression_Practitioner(PT_Practitioner):
                 res['pred_y'] = (
                                         sigmoid(res['pred_y'])>0.5
                                 ).sum() / res['pred_y'].shape[1]
-            if style=='softlabel':
+            elif style=='softlabel':
                 res['pred_y'] = np.argmax(
                     res['pred_y']
                 ) / (res['pred_y'].shape[1] - 1)
-            if style=='continuous':
+            elif style=='continuous':
                 res['pred_y'] = res['pred_y'].item()
-            if style=='patchGAN':
+            elif style=='patchGAN':
                 res['pred_y'] = res['pred_y'].mean().item()
-            if style=='binary':
+            elif style=='binary':
                 res['pred_y'] = softmax(res['pred_y'],
                                         axis=1)[:,1].item()
+            else:
+                raise ValueError('the output_style is not recognized: ' +
+                                 str(style))
 
             return_results.append(res)
         # save results in the data_processor
@@ -162,7 +171,7 @@ class PTRegression_Practitioner(PT_Practitioner):
         else:
             self.data_processor.inference_results = pd.DataFrame(
                 [
-                    {ky: v for ky, v in ex.items() if is_Primitive(v)}
+                    {ky: v for ky, v in ex.items() if is_primitive(v)}
                     for ex in return_results
                 ]
             )

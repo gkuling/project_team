@@ -1,18 +1,21 @@
 import numpy as np
 
-from ..project_config import is_Primitive
+from ..project_config import is_primitive
 import pandas as pd
 from torch.utils.data import Dataset
 from copy import deepcopy
 from tqdm import tqdm
 from torchvision import transforms as pt_transforms
 
+__all__ = ['Project_Team_Dataset', 'Images_Dataset', 'Text_Dataset',
+           'Dataset_Fingerprint']
+
 class Project_Team_Dataset(Dataset):
     '''
     Custom dataset built for the project_team package
     '''
     def __init__(self,
-                 data_df=pd.DataFrame([]),
+                 data_df=None,
                  preload_transforms=None,
                  transforms=None,
                  preload_data=False,
@@ -26,7 +29,14 @@ class Project_Team_Dataset(Dataset):
             __getitem__ has been called by a dataloader.
         :param preload_data: boolean. default: False. Indicator whether to
         load all the data into memory or to open data on the fly.
+        :param filter_out_zero_X: boolean. default: True. Drop examples
+        whose processed X is all zeros (for example a blank image).
+        :param debug_pretransform: boolean. default: False. When True, a
+        failing pretransform re-raises its original exception instead of
+        dropping the example with a warning.
         '''
+        if data_df is None:
+            data_df = pd.DataFrame([])
         self.dfiles = data_df.to_dict('records')
         self.preload_transforms = preload_transforms
         self.transforms = transforms
@@ -42,8 +52,9 @@ class Project_Team_Dataset(Dataset):
         '''
         function used to preload all data and store objects in a files_silo
         '''
-        print(self.__str__().split(' ')[0].split('.')[-1] + ' Message: ')
+        print(type(self).__name__ + ' Message: ')
         cnt=0
+        dropped = 0
         new_dfiles = []
         for item in tqdm(range(len(self.dfiles)),
                          desc='Preloading Dataset: ',
@@ -66,52 +77,62 @@ class Project_Team_Dataset(Dataset):
                 # files_silo if it is not a Primitive data type or it isn't
                 # the same as it was prior to transformation it will be stored.
                 items_to_save = [key for key in pre_loaded_ex.keys()
-                                 if not is_Primitive(post_loaded_ex[key]) or
+                                 if not is_primitive(post_loaded_ex[key]) or
                                  post_loaded_ex[key]!=pre_loaded_ex[key]]
 
-                # Take a data fingerprint if it is appropriate
+                # Take a data fingerprint of array-valued fields (the
+                # fingerprint only works on numpy arrays)
                 if hasattr(self, 'dataset_fingerprint'):
-                    for item in items_to_save:
-                        self.dataset_fingerprint.update(item,
-                                                        post_loaded_ex[item])
+                    for save_key in items_to_save:
+                        value = post_loaded_ex[save_key]
+                        if isinstance(value, np.ndarray) or (
+                                isinstance(value, list) and len(value) > 0
+                                and all(isinstance(v, np.ndarray)
+                                        for v in value)):
+                            self.dataset_fingerprint.update(save_key, value)
 
                 pre_loaded_ex.update({key:value for key, value in post_loaded_ex.items()
                                       if key not in pre_loaded_ex.keys()})
                 # check the transformation should be kept
-                if not self.filter_out_zero_X:
+                if not self.filter_out_zero_X or \
+                        self.keep_data_type_specific_function(post_loaded_ex):
                     for key in items_to_save:
                         self.catalogue['save_name_' + str(cnt)] = cnt
                         self.files_silo.append(post_loaded_ex[key])
                         pre_loaded_ex[key] = 'save_name_' + str(cnt)
                         cnt += 1
-                    new_dfiles.append(pre_loaded_ex)
-                elif self.keep_data_type_specific_function(post_loaded_ex):
-                    for key in items_to_save:
-                        self.catalogue['save_name_' + str(cnt)] = cnt
-                        self.files_silo.append(post_loaded_ex[key])
-                        pre_loaded_ex[key] = 'save_name_' + str(cnt)
-                        cnt+=1
+                    # remember exactly which fields hold silo sentinels so
+                    # __getitem__ never confuses genuine data for one
+                    pre_loaded_ex['_silo_fields'] = list(items_to_save)
                     new_dfiles.append(pre_loaded_ex)
                 else:
                     # if all inputs are zero, do not keep in the dataset.
-                    print(self.__str__().split(' ')[0].split('.')[-1] +
+                    dropped += 1
+                    print(type(self).__name__ +
                           ' Message: Warning an example has an input of all '
                           'zeros. Example at line '
                           + str(item) + ' of the current dataset. ')
             except Exception as e:
                 if self.debug_pretransform:
                     raise e
-                else:
-                    print(self.__str__().split(' ')[0].split('.')[-1] +
-                          ' Message: Warning an example has failed the '
-                          'preloading transforms. Example at line ' +
-                          str(item) + ' of the current dataset. ')
+                dropped += 1
+                print(type(self).__name__ +
+                      ' Message: Warning an example has failed the '
+                      'preloading transforms. Example at line ' +
+                      str(item) + ' of the current dataset. Reason: ' +
+                      type(e).__name__ + ': ' + str(e))
+        if len(self.dfiles) > 0 and len(new_dfiles) == 0:
+            raise RuntimeError(
+                'Every example (' + str(dropped) + ') failed or was '
+                'filtered out during preloading — the resulting dataset is '
+                'empty. Re-run with debug_pretransform=True to see the '
+                'original exception.')
         self.dfiles = new_dfiles
 
     def keep_data_type_specific_function(self,x):
         '''
-        Depending on the data typoe the dataset is specialized for this check
-        could be different. Majority of it is to check that the iminput in not
+        Depending on the data type the dataset is specialized for this check
+        could be different. Majority of it is to check that the input is not
         all zeros.
         :param x: input value
         :return: boolean
@@ -129,7 +150,7 @@ class Project_Team_Dataset(Dataset):
         self.catalogue = {}
         cnt = 0
         for ex in tqdm(input_data_list,
-                       desc='Transfering data from list'):
+                       desc='Transferring data from list'):
 
             ex = {k:v for k,v in ex.items() if 'meta_data' not in k}
 
@@ -137,14 +158,17 @@ class Project_Team_Dataset(Dataset):
             if self.preload_transforms:
                 ex = self.preload_transforms(ex)
             dfile_ex = {}
+            silo_fields = []
             for k,v in ex.items():
-                if is_Primitive(v):
+                if is_primitive(v):
                     dfile_ex[k] = v
                 else:
                     dfile_ex[k] = 'save_name_' + str(cnt)
+                    silo_fields.append(k)
                     self.files_silo.append(v)
                     self.catalogue['save_name_' + str(cnt)] = cnt
                     cnt+=1
+            dfile_ex['_silo_fields'] = silo_fields
             self.dfiles.append(dfile_ex)
 
     def set_filter(self, lambda_condition):
@@ -166,7 +190,7 @@ class Project_Team_Dataset(Dataset):
         set the data transforms for __getitem__
         :param transforms_compose: list or pt_rensforms.Compose
         '''
-        if type(transforms_compose)==list:
+        if isinstance(transforms_compose, list):
             self.transforms = pt_transforms.Compose(transforms_compose)
         else:
             self.transforms = transforms_compose
@@ -176,7 +200,7 @@ class Project_Team_Dataset(Dataset):
         set the data transforms for pre_loading
         :param transforms_compose: list or pt_transforms.Compose
         '''
-        if type(transforms_compose) == list:
+        if isinstance(transforms_compose, list):
             self.preload_transforms = pt_transforms.Compose(transforms_compose)
         else:
             self.preload_transforms = transforms_compose
@@ -207,9 +231,10 @@ class Project_Team_Dataset(Dataset):
         example = deepcopy(self.list_of_examples()[item])
 
         if self.preloaded:
-            for key in example:
-                if str(example[key]) in self.catalogue.keys():
-                    example[key] = self.files_silo[self.catalogue[example[key]]]
+            # only fields recorded in _silo_fields are sentinel-substituted;
+            # genuine data that happens to look like 'save_name_3' is safe
+            for key in example.pop('_silo_fields', []):
+                example[key] = self.files_silo[self.catalogue[example[key]]]
         else:
             example = self.preload_transforms(example)
 
@@ -222,7 +247,7 @@ class Images_Dataset(Project_Team_Dataset):
     '''
     A dataset that is designated to handling imaging files
     '''
-    def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None,
+    def __init__(self, data_df=None, preload_transforms=None,
                  transforms=None, preload_data=False, filter_out_zero_X=True,
                  debug_pretransform=False):
         super(Images_Dataset, self).__init__(data_df, preload_transforms,
@@ -243,7 +268,7 @@ class Text_Dataset(Project_Team_Dataset):
     '''
     A dataset that is designated to handling text files
     '''
-    def __init__(self, data_df=pd.DataFrame([]), preload_transforms=None,
+    def __init__(self, data_df=None, preload_transforms=None,
                  transforms=None, preload_data=False, filter_out_zero_X=True,
                  debug_pretransform=False):
         super(Text_Dataset, self).__init__(data_df, preload_transforms,
@@ -292,15 +317,25 @@ class Dataset_Fingerprint():
             raise Exception('Not a numpy array. Fingerprinting only works on '
                             'numpy arrays currently. ')
         return return_result
+    def is_iterable(self, itm):
+        '''
+        whether itm is a sequence of separate items to fingerprint
+        individually. Deliberately excludes dict and str, which are iterable
+        in python but are not "a list of examples" in this class's sense.
+        :param itm: the value to check
+        :return: boolean
+        '''
+        return isinstance(itm, (list, tuple, np.ndarray))
+
     def isititerable(self, itm):
-        try:
-            i = [_ for _ in itm]
-            return True
-        except:
-            return False
+        '''Deprecated: use is_iterable().'''
+        import warnings
+        warnings.warn('isititerable() is deprecated; use is_iterable().',
+                      DeprecationWarning, stacklevel=2)
+        return self.is_iterable(itm)
 
     def update(self, item_nm, item):
-        itrbl = self.isititerable(item)
+        itrbl = self.is_iterable(item)
 
         if itrbl:
             subject = [self.finger_print(i) for i in item]
@@ -320,7 +355,7 @@ class Dataset_Fingerprint():
             )
 
     def get_percentiles(self, field_oi, min, max):
-        itrbl = self.isititerable(self.fingerprint[field_oi])
+        itrbl = self.is_iterable(self.fingerprint[field_oi])
         if itrbl:
             return [
                 (i[str(min).replace('.','_')+'percentile'],
@@ -336,7 +371,7 @@ class Dataset_Fingerprint():
             )
 
     def get_mean_std(self, field_oi):
-        itrbl = self.isititerable(self.fingerprint[field_oi])
+        itrbl = self.is_iterable(self.fingerprint[field_oi])
         if itrbl:
             return [
                 (i['mean'], i['std'])
@@ -349,7 +384,7 @@ class Dataset_Fingerprint():
             )
 
     def get_min_max(self, field_oi):
-        itrbl = self.isititerable(self.fingerprint[field_oi])
+        itrbl = self.is_iterable(self.fingerprint[field_oi])
         if itrbl:
             return [
                 (i['min'], i['max'])

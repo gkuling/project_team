@@ -27,7 +27,8 @@ class Image_Processor_config(DT_config):
         :param one_hot_encode: boolean on whether to one hot encode the y label
         :param max_classes: the amount of labeled classes for the task
         '''
-        super(Image_Processor_config, self).__init__(pre_load, **kwargs)
+        super(Image_Processor_config, self).__init__(
+            pre_load=pre_load, **kwargs)
         self.silo_dtype=silo_dtype
         self.numpy_shape=numpy_shape
         self.pad_shape = pad_shape
@@ -38,10 +39,12 @@ class Image_Processor(_Processor):
     '''
     a image processor parent class
     '''
-    def __init__(self, image_processor_config=Image_Processor_config()):
+    def __init__(self, image_processor_config=None):
         '''
         :param image_processor_config: an images processor config
         '''
+        if image_processor_config is None:
+            image_processor_config = Image_Processor_config()
         super(Image_Processor, self).__init__(image_processor_config)
 
         # the pre_transforms for a standard MNIST classification experiment.
@@ -52,10 +55,11 @@ class Image_Processor(_Processor):
                          output_dtype=self.config.silo_dtype),
             ImageToNumpy()
         ]
-        if self.config.pad_shape is tuple and all([x is int for x in
-                                                   self.config.pad_shape]):
+        # tuple OR list: a saved config reloads tuples as json lists
+        if isinstance(self.config.pad_shape, (tuple, list)) and \
+                all(isinstance(x, int) for x in self.config.pad_shape):
             pre_transforms.append(
-                Pad_to_Size_numpy(shape=self.config.pad_shape)
+                Pad_to_Size_numpy(shape=tuple(self.config.pad_shape))
             )
         if self.config.one_hot_encode:
             pre_transforms.append(OneHotEncode(
@@ -66,14 +70,14 @@ class Image_Processor(_Processor):
 
     def get_dataset(self, data, name, transforms):
         '''
-        function that sets the dataset atribute for the given name
+        function that sets the dataset attribute for the given name
         :param data: pandas dataframe to be loaded as a dataset
         :param name: the name of the dataset
         :param transforms: the pretransforms to be given to the dataset
         '''
-        assert type(data)==pd.DataFrame
-        # GCK: This is the point that I pctured having a different dataset
-        # for slice based images (for radiology data) or pathc based dataset
+        assert isinstance(data, pd.DataFrame)
+        # GCK: This is the point that I pictured having a different dataset
+        # for slice based images (for radiology data) or patch based dataset
         # (for pathology and 2D data)
         setattr(self, name, Images_Dataset(
             data,

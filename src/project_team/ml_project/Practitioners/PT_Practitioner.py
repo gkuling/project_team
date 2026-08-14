@@ -9,14 +9,17 @@ from transformers import get_cosine_schedule_with_warmup
 import gc
 from tqdm import tqdm
 from project_team.dt_project.dt_processing import Add_Channel, \
-    MnStdNormalize_Numpy, AffineAugmentation, AddGaussainNoise, ToTensor, \
+    MnStdNormalize_Numpy, AffineAugmentation, AddGaussianNoise, ToTensor, \
     Clip_Numpy
 
 class PTPractitioner_config(project_config):
+    # derived state written by __init__, restored via kwargs on reload
+    _derived_config_keys = frozenset({'affine_aug_params'})
+
     def __init__(self,
                  batch_size=2,
                  n_epochs=1,
-                 n_steps=1,
+                 n_steps=None,
                  warmup=0.05,
                  n_saves=10,
                  validation_criteria='min',
@@ -31,19 +34,23 @@ class PTPractitioner_config(project_config):
                  affine_aug=True,
                  add_Gnoise=True,
                  gaussian_std=1.0,
-                 normalization_percentiles=(0.5,99.5),
+                 normalization_percentiles=[(0.5, 99.5)],
                  normalization_channels=[(0.5,0.5)],
                  n_workers=0,
                  data_parallel=False,
                  collate_function=None,
                  batch_spoofing=False,
+                 trained_steps=0,
+                 best_vl_loss=None,
+                 best_vl_step=0,
+                 vl_interval=None,
                  **kwargs):
         '''
         Config file for a pytorch practitioner
         :param batch_size: mini batch size
         :param n_epochs: amount of epochs to run
-        :param n_steps: amount of training iterations/steps to run
-            (optional: if n_epochs is given)
+        :param n_steps: amount of training iterations/steps to run. Leave as
+            None (the default) to train by epochs only
         :param warmup: Portion of training used for warmup steps
         :param n_saves: amount of times validation is run and the model saved
         :param validation_criteria: choice of whether the validation loss is
@@ -58,23 +65,41 @@ class PTPractitioner_config(project_config):
             either every 'batch' or every 'epoch'
         :param grad_clip: gradient clip value
         :param loss_type: loss function
-        :param affine_aug: indicate affien augmentation is being used
+        :param affine_aug: indicate affine augmentation is being used
         :param add_Gnoise: indicate whether gaussian noise will be added to
             the images
         :param gaussian_std: standard deviation of the gaussian noise added
             to the images
-        :param normalization_percentiles: percentiles that the input will be
-            clipped by
+        :param normalization_percentiles: per-channel (min, max) percentile
+            pairs that the input will be clipped by, e.g. [(0.5, 99.5)] —
+            one tuple per input channel, matching normalization_channels
         :param normalization_channels: normalization mean and standard
             deviations used
         :param n_workers: number of worker that are used by the data loader
         :param data_parallel: indicator if data parallel is desired
-        :param collate_function: collate function for the batch data
-        :param batch_spoofing: indicator of whther to use bacth spoofing or not
-        :param kwargs: any extra keywords are given. Thoise not used are
-            discarded.
+        :param collate_function: collate function for the batch data. Either
+            a callable (cannot be saved to json) or the string 'same_size'
+        :param batch_spoofing: indicator of whether to use batch spoofing
+            or not
+        :param trained_steps: running count of completed training steps.
+            A named parameter so a reloaded checkpoint config resumes
+            training where it stopped
+        :param best_vl_loss: best validation loss seen so far. None (the
+            default) means no validation has run yet. None is used instead
+            of +/-inf because inf is not valid json
+        :param best_vl_step: the step at which best_vl_loss was recorded
+        :param vl_interval: steps between validation/save points. Computed
+            from n_steps/n_saves when None
+        :param kwargs: any extra keywords are stored as config attributes
+            (the huggingface convention); unrecognized names trigger a
+            warning naming the closest real parameter
         '''
-        super(PTPractitioner_config, self).__init__('ML_PTPractitioner')
+        # NOTE: trained_steps/best_vl_loss/best_vl_step live on the config,
+        # not the practitioner, because the config is what gets checkpointed
+        # — this is how training resumes mid-run. The config holds both
+        # hyperparameters and mutable run state by design.
+        kwargs.setdefault('config_type', 'ML_PTPractitioner')
+        super(PTPractitioner_config, self).__init__(**kwargs)
         # Training Parameters
         self.loss_type = loss_type
         self.batch_size=batch_size
@@ -84,27 +109,29 @@ class PTPractitioner_config(project_config):
         # be easily calculated.
         if n_steps is not None:
             self.n_steps = n_steps
-            self.vl_interval = int(np.round(self.n_steps / self.n_saves))
+            if vl_interval is None:
+                vl_interval = max(1, int(np.round(self.n_steps /
+                                                  self.n_saves)))
+            self.vl_interval = vl_interval
         else:
             self.n_steps = None
-            self.vl_interval = None
+            self.vl_interval = vl_interval
         self.warmup = warmup
         self.lr_decay = lr_decay
         self.lr_decay_stepsize = lr_decay_stepsize
         self.lr_decay_gamma = lr_decay_gamma
-        assert lr_decay_step_timing=='epoch' or lr_decay_step_timing=='batch'
+        if lr_decay_step_timing not in ('epoch', 'batch'):
+            raise ValueError(
+                "lr_decay_step_timing must be 'epoch' or 'batch', got " +
+                repr(lr_decay_step_timing))
         self.lr_decay_step_timing = lr_decay_step_timing
         self.optimizer = optimizer
         self.lr = lr
         self.grad_clip = grad_clip
-        self.trained_steps = 0
+        self.trained_steps = trained_steps
         self.data_parallel = data_parallel
-        if validation_criteria=='min':
-            self.best_vl_loss = np.inf
-            self.best_vl_step = 0
-        else:
-            self.best_vl_loss = -np.inf
-            self.best_vl_step = 0
+        self.best_vl_loss = best_vl_loss
+        self.best_vl_step = best_vl_step
 
         self.validation_criteria = validation_criteria
         self.n_workers = n_workers
@@ -116,20 +143,33 @@ class PTPractitioner_config(project_config):
         self.add_Gnoise = add_Gnoise
         self.gaussian_std=gaussian_std
         self.affine_aug = affine_aug
-        if affine_aug:
+        if affine_aug and not hasattr(self, 'affine_aug_params'):
+            # hasattr guard: a reloaded config restores affine_aug_params
+            # through kwargs, and re-initializing would clobber it
             self.initialize_augmentation_parameters()
-        if collate_function is not None:
-            if hasattr(collate_function, '__call__'):
-                self.collate_function = collate_function
-            elif collate_function=='same_size':
-                self.collate_function = F.make_all_tensors_same_size
-            else:
-                raise Exception(str(collate_function) +
-                                ' is not a recognized collate_function option. '
-                                'Must be a custom function or "same_size". '
-                                'Should implement more of these. ')
-        else:
-            self.collate_function = None
+        if collate_function is not None and \
+                not callable(collate_function) and \
+                collate_function != 'same_size':
+            raise ValueError(str(collate_function) +
+                             ' is not a recognized collate_function option. '
+                             'Must be a custom function or "same_size".')
+        # the spec (string or None) is stored so the config stays
+        # json-serializable; get_collate_function() resolves it to a callable
+        self.collate_function = collate_function
+
+    def get_collate_function(self):
+        '''
+        resolve the stored collate_function spec into the callable handed to
+        a DataLoader
+        :return: a callable or None
+        '''
+        if self.collate_function is None or callable(self.collate_function):
+            return self.collate_function
+        if self.collate_function == 'same_size':
+            return F.make_all_tensors_same_size
+        raise ValueError(str(self.collate_function) +
+                         ' is not a recognized collate_function option. '
+                         'Must be a custom function or "same_size".')
 
     def initialize_augmentation_parameters(self):
         '''
@@ -152,7 +192,7 @@ class PTPractitioner_config(project_config):
         setting the affien augmentatiion parameters
         :param shift: tuple or list. the shift in each dimension
         :param rot: tuple or list. rotation on each axis
-        :param scale: tuple or list. the portion fo scaling
+        :param scale: tuple or list. the portion of scaling
         :param uniform_scale: bule whether to sample augmentation from a
             uniform distribution or a gaussian
         :param order: the level of interpolation in resampling. 0=nearest,
@@ -184,7 +224,7 @@ class PTPractitioner_config(project_config):
 
 class PT_Practitioner(object):
     def __init__(self, model, io_manager, data_processor,
-                 trainer_config=PTPractitioner_config()):
+                 trainer_config=None):
         '''
         constructor for the pytorch practitioner
         :param model: pytorch model to be trained
@@ -192,6 +232,8 @@ class PT_Practitioner(object):
         :param data_processor: the processor for the data
         :param trainer_config: configuration for the practitioner
         '''
+        if trainer_config is None:
+            trainer_config = PTPractitioner_config()
         self.model = deepcopy(model)
         self.io_manager = io_manager
         self.data_processor = data_processor
@@ -204,6 +246,17 @@ class PT_Practitioner(object):
         self.subclass_standard_transforms = []
 
         self.initialize_standard_pretransforms()
+
+    def get_subclass_standard_transforms(self):
+        '''
+        Override in a subclass to add transforms (typically for the y field).
+        Called every time the standard transforms are (re)built, so it is
+        immune to __init__ ordering — an attribute assigned after
+        super().__init__() would be silently missed.
+        :return: list of transforms to append to standard_transforms
+        '''
+        return list(self.subclass_standard_transforms)
+
     def initialize_standard_pretransforms(self):
         # change standard_transforms based on the input data type
         self.standard_transforms = []
@@ -216,7 +269,8 @@ class PT_Practitioner(object):
                                      field_oi='X'),
                 ToTensor(field_oi='X')
             ])
-        self.standard_transforms.extend(self.subclass_standard_transforms)
+        self.standard_transforms.extend(
+            self.get_subclass_standard_transforms())
 
     def validate_model(self, val_dataloader):
         raise NotImplementedError('This Parent class does not have a '
@@ -247,7 +301,9 @@ class PT_Practitioner(object):
         set custom_transforms used by the practitioner
         :param transforms_list: list of transforms
         '''
-        assert type(transforms_list)==list
+        if not isinstance(transforms_list, list):
+            raise TypeError('transforms_list must be a list, got ' +
+                            type(transforms_list).__name__)
         self.custom_transforms = transforms_list
 
     def extend_custom_transforms(self, transforms_list):
@@ -255,7 +311,9 @@ class PT_Practitioner(object):
         extend the custom_transforms used by the practitioner
         :param transforms_list: list of transforms
         '''
-        assert type(transforms_list)==list
+        if not isinstance(transforms_list, list):
+            raise TypeError('transforms_list must be a list, got ' +
+                            type(transforms_list).__name__)
         self.custom_transforms.extend(transforms_list)
 
     def setup_dataloader(self, data_set):
@@ -284,13 +342,16 @@ class PT_Practitioner(object):
         # don't augment with noise for validation
         if self.config.add_Gnoise and data_set=='training':
             trnsfrms.extend([
-                AddGaussainNoise(self.config.gaussian_std)
+                AddGaussianNoise(self.config.gaussian_std)
             ])
 
-        # use dataset fingerprint for 'auto' parameters
-        params_to_auto = [key for key in self.config.to_dict() if
-                          key!='transformers_version' and
-                          type(getattr(self.config, key) )==str and
+        # use dataset fingerprint for 'auto' parameters. Only these fields
+        # are eligible — a static allowlist, not a scan of every config
+        # string for the substring 'auto'
+        AUTO_ELIGIBLE_FIELDS = ('normalization_percentiles',
+                                'normalization_channels')
+        params_to_auto = [key for key in AUTO_ELIGIBLE_FIELDS if
+                          isinstance(getattr(self.config, key), str) and
                           'auto' in getattr(self.config, key)]
         if len(params_to_auto) > 0:
             if 'normalization_percentiles' in params_to_auto:
@@ -331,15 +392,19 @@ class PT_Practitioner(object):
                 shuffle=True,
                 drop_last=True,
                 num_workers=self.config.n_workers,
-                collate_fn=self.config.collate_function
+                collate_fn=self.config.get_collate_function()
             )
         elif data_set=='validation':
             self.data_processor.vl_dset.set_transforms(transforms.Compose(
                 trnsfrms
             ))
+            # batch_size=1 is load-bearing: validate_model averages
+            # per-batch losses unweighted, which is only the exact
+            # per-sample mean when every batch has the same size
             return DataLoader(self.data_processor.vl_dset,
                               batch_size=1,
-                              shuffle=False)
+                              shuffle=False,
+                              num_workers=self.config.n_workers)
         else:
             raise ValueError(data_set + ' is not an option for this '
                                         'practitioner. ')
@@ -368,7 +433,7 @@ class PT_Practitioner(object):
                                                           'recognizable '
                                                           'optimizer')
 
-        # Set uplearning rate decay options
+        # Set up learning rate decay options
         if self.config.lr_decay is None:
             pass
         elif self.config.lr_decay=='cosine_schedule_with_warmup':
@@ -380,18 +445,18 @@ class PT_Practitioner(object):
                     num_cycles=0.4
                 )
         elif self.config.lr_decay=='steplr':
-            scheduler = torch.optim.lr_scheduler.StepLR(self.optmzr,
+            self.scheduler = torch.optim.lr_scheduler.StepLR(self.optmzr,
                                step_size=self.config.lr_decay_stepsize ,
                                gamma = self.config.lr_decay_gamma)
         else:
-            raise Exception('The scheduler you gave may not be implemented. '
-                            'options are steplr, '
-                            'and cosine_schedule_with_warmup. ')
+            raise ValueError('The scheduler you gave may not be implemented. '
+                             'options are steplr, '
+                             'and cosine_schedule_with_warmup. ')
 
     def setup_loss_functions(self):
         '''
         Set up the practitioner loss function based on the config.
-        Most are simple torch loss functions but the oportunity to use a
+        Most are simple torch loss functions but the opportunity to use a
         custom one is there.
         '''
         if self.config.loss_type=='MSE':
@@ -411,10 +476,11 @@ class PT_Practitioner(object):
         else:
             raise NotImplementedError('The ' + str(self.config.loss_type) +
                                       ' is not implemented. ')
-        if torch.cuda.is_available():
-            self.model = self.model.cuda()
-            if callable(getattr(self.loss_function,'cuda',None)):
-                self.loss_function = self.loss_function.cuda()
+        # the model's own device move happens explicitly in train_model —
+        # a loss-function setup method should not relocate the model
+        if torch.cuda.is_available() and \
+                callable(getattr(self.loss_function, 'cuda', None)):
+            self.loss_function = self.loss_function.cuda()
 
     def setup_steps(self, tr_size):
         '''
@@ -436,8 +502,8 @@ class PT_Practitioner(object):
             # if no epochs given and steps given
             self.config.set_n_epochs(len(self.data_processor.tr_dset))
         elif self.config.n_epochs is None and self.config.n_steps is None:
-            raise Exception('n_epochs and n_steps cannot both be None in the '
-                            'PT_Pracitioner_config')
+            raise ValueError('n_epochs and n_steps cannot both be None in '
+                             'the PTPractitioner_config')
         else:
             if tr_size * self.config.n_epochs>=self.config.n_steps:
                 self.config.n_steps = tr_size * self.config.n_epochs
@@ -456,8 +522,8 @@ class PT_Practitioner(object):
         # set up the practitioner's  validation interval and save steps
         if self.config.vl_interval is None and not self.config.n_saves is None:
             # if no val_interval but n_saves given
-            self.config.vl_interval = \
-                int(np.round(self.config.n_steps / self.config.n_saves))
+            self.config.vl_interval = max(1, int(
+                np.round(self.config.n_steps / self.config.n_saves)))
 
         elif not self.config.vl_interval is None and self.config.n_saves is None:
             # if no n_saves given but val_interval given
@@ -467,27 +533,31 @@ class PT_Practitioner(object):
         elif not self.config.vl_interval is None and not self.config.n_saves is None:
             pass
         else:
-            raise Exception(
+            raise ValueError(
                 'vl_interval and n_saves cannot both be None in the '
-                'PT_Pracitioner_config')
+                'PTPractitioner_config')
 
         # set up warmup steps if needed
         if self.config.warmup is None:
             self.config.warmup = 0
-        elif self.config.warmup <= 1.0 and self.config.warmup >= 0.0:
+            self.config.warmup_steps = 0
+        elif isinstance(self.config.warmup, float) and \
+                0.0 <= self.config.warmup <= 1.0:
             self.config.warmup_steps = int(
                 np.round(self.config.n_steps * self.config.warmup))
-        elif type(self.config.warmup) == int and self.config.warmup_steps< \
-                self.config.n_steps:
-            pass
+        elif isinstance(self.config.warmup, int) and \
+                self.config.warmup < self.config.n_steps:
+            self.config.warmup_steps = self.config.warmup
         else:
-            raise Exception('warmup in the PT_Pracitioner_config must be '
-                            'None, a float between [0.0,1.0], or int amount '
-                            'of steps less than n_steps. ')
+            raise ValueError('warmup in the PTPractitioner_config must be '
+                             'None, a float between [0.0,1.0] (a fraction '
+                             'of n_steps), or an int amount of steps less '
+                             'than n_steps; got ' +
+                             repr(self.config.warmup))
 
     def train_model(self):
         '''
-        A function that calls all the tasks neccessary to train a model based
+        A function that calls all the tasks necessary to train a model based
         on the parameters in the practitioner config.
         '''
 
@@ -564,7 +634,7 @@ class PT_Practitioner(object):
                         if split_multiple>self.config.batch_size:
                             raise RuntimeError(
                                 "The GPU you are trying to spoof on cannot "
-                                "hadle one training example. This "
+                                "handle one training example. This "
                                 "practitioner cannot calculate a single step "
                                 "now. ")
                         try:
@@ -583,7 +653,7 @@ class PT_Practitioner(object):
                             continue_training = False
                             split_multiple_memory.append(np.log2(split_multiple))
                         except Exception as e:
-                            if type(e)==torch.cuda.OutOfMemoryError:
+                            if isinstance(e, torch.cuda.OutOfMemoryError):
                                 split_multiple *= 2
                             else:
                                 raise e
@@ -613,8 +683,10 @@ class PT_Practitioner(object):
                         (self.config.trained_steps-1)%self.config.vl_interval==0:
                     if vl_dtldr:
                         vl_loss = float(self.validate_model(vl_dtldr))
+                        # best_vl_loss is None until the first validation
                         if self.config.validation_criteria=='min':
-                            if vl_loss<self.config.best_vl_loss:
+                            if self.config.best_vl_loss is None or \
+                                    vl_loss<self.config.best_vl_loss:
                                 self.config.best_vl_loss = vl_loss
                                 self.config.best_vl_step = self.config.trained_steps
                                 if torch.cuda.is_available():
@@ -625,7 +697,8 @@ class PT_Practitioner(object):
                                     self.io_manager.set_final_model(
                                         self.model.state_dict())
                         else:
-                            if vl_loss>self.config.best_vl_loss:
+                            if self.config.best_vl_loss is None or \
+                                    vl_loss>self.config.best_vl_loss:
                                 self.config.best_vl_loss = vl_loss
                                 self.config.best_vl_step = self.config.trained_steps
                                 if torch.cuda.is_available():
@@ -657,7 +730,8 @@ class PT_Practitioner(object):
         if vl_dtldr:
             vl_loss = float(self.validate_model(vl_dtldr))
             if self.config.validation_criteria=='min':
-                if vl_loss<self.config.best_vl_loss:
+                if self.config.best_vl_loss is None or \
+                        vl_loss<self.config.best_vl_loss:
                     self.config.best_vl_loss = vl_loss
                     self.config.best_vl_step = self.config.trained_steps
                     if torch.cuda.is_available():
@@ -668,7 +742,8 @@ class PT_Practitioner(object):
                         self.io_manager.set_final_model(
                             self.model.state_dict())
             else:
-                if vl_loss>self.config.best_vl_loss:
+                if self.config.best_vl_loss is None or \
+                        vl_loss>self.config.best_vl_loss:
                     self.config.best_vl_loss = vl_loss
                     self.config.best_vl_step = self.config.trained_steps
                     if torch.cuda.is_available():
@@ -706,6 +781,16 @@ class PT_Practitioner(object):
             # log_softmax before being evaluated.
             return self.loss_function(torch.log_softmax(py, dim=1),
                                       y)
+        elif self.config.loss_type=='CE' and isinstance(y, torch.Tensor):
+            # CrossEntropyLoss wants class-index targets as Long. A float
+            # target with the prediction's own shape is a class-probability
+            # target and passes through untouched.
+            if y.dim()==1:
+                return self.loss_function(py, y.long())
+            elif y.dim()==2 and y.shape[1]==1 and py.shape[1]!=1:
+                return self.loss_function(py, y[:, 0].long())
+            else:
+                return self.loss_function(py, y)
         elif self.config.loss_type=='NLL':
             # for NLL loss, the prediction logits should be put through a
             # log_softmax, and the groundtruth must be a LongTensor data
@@ -721,8 +806,8 @@ class PT_Practitioner(object):
                                           if torch.cuda.is_available() else
                                           y.type(torch.LongTensor)[:,0])
             else:
-                raise Exception('NLL loss tearget not being used properly. '
-                                'Determine if this needs to be updated. ')
+                raise ValueError('NLL loss target not being used properly. '
+                                 'Determine if this needs to be updated. ')
         else:
             return self.loss_function(py, y)
 
@@ -733,7 +818,7 @@ class PT_Practitioner(object):
         :param batch_data: the data from the dataloader
         :return: input_tensor, and an output_tensor
         '''
-        if type(batch_data['X'])!=dict:
+        if not isinstance(batch_data['X'], dict):
             if torch.cuda.is_available():
                 input_tensor = batch_data['X'].cuda()
             else:
@@ -744,7 +829,7 @@ class PT_Practitioner(object):
                                 for ky, v, in batch_data['X'].items()}
             else:
                 input_tensor = batch_data['X']
-        if type(batch_data['y'])!=dict:
+        if not isinstance(batch_data['y'], dict):
             if torch.cuda.is_available():
                 output_tensor = batch_data['y'].cuda()
             else:

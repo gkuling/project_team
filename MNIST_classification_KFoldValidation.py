@@ -19,12 +19,11 @@ from torchvision import datasets
 from project_team import ml_project
 import project_team as proteam
 import os
-from copy import deepcopy
 
 r_seed = 2023322
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--working_dir',type=str,
-                    default='/amartel_data/Grey/pro_team_examples',
+                    default=os.path.join(os.getcwd(), 'project_team_runs'),
                     help='The current directory to save models, and configs '
                          'of the experiment')
 opt = parser.parse_args()
@@ -32,11 +31,11 @@ opt = parser.parse_args()
 # Prepare data if not already saved and set up
 if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
     if not os.path.exists(os.path.join(opt.working_dir, 'data')):
-        os.mkdir(os.path.join(opt.working_dir, 'data'))
+        os.makedirs(os.path.join(opt.working_dir, 'data'))
 
-    dataset1 = datasets.MNIST('../data', train=True, download=True)
+    dataset1 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=True, download=True)
 
-    dataset2 = datasets.MNIST('../data', train=False)
+    dataset2 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=False)
     all_data = []
     cnt = 0
     for ex in dataset1:
@@ -63,7 +62,7 @@ if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
 
 # Prepare Manager
 # Here use all the same parameters as the Train/Test Split example
-from default_arguements import dt_args, ml_args, mdl_args
+from default_arguments import dt_args, ml_args, mdl_args
 
 io_args = {
     'data_csv_location': os.path.join(opt.working_dir, 'data',
@@ -113,8 +112,8 @@ starting_fold = 0
 for k in range(starting_fold, manager.config.k_folds):
     manager.set_fold(k)
 
-    mdl = deepcopy(mdl)
-    # Prepare Practitioner
+    # Prepare Practitioner (it deepcopies the model itself, so each fold
+    # trains from the same initial weights)
     ml_project_cnfg = proteam.ml_project.PTClassification_Practitioner_config(
         **ml_args)
     practitioner = proteam.ml_project.PTClassification_Practitioner(
@@ -131,8 +130,7 @@ for k in range(starting_fold, manager.config.k_folds):
     practitioner.run_inference()
     evaluator = ml_project.ClassificationEval_Practitioner(
         config=ml_project.ClassificationEval_Practitioner_config(
-            classes=io_project_cnfg.y_domain,
-            save_folder=manager.root
+            classes=io_project_cnfg.y_domain
         )
     )
     evaluator.evaluate(processor.inference_results)
