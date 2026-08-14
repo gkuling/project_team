@@ -1,4 +1,5 @@
 from project_team.io_project.IO_config import io_config
+import ast
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -55,14 +56,13 @@ class _HyperParameterTuning(_Statistical_Project):
     - search hyperparamters to find the best model
     '''
     def __init__(self, io_config_input):
+        # validate before super() creates any directories on disk
+        if not isinstance(io_config_input, io_hptuning_config):
+            raise TypeError(
+                '_HyperParameterTuning requires an io_hptuning_config, '
+                'got ' + type(io_config_input).__name__ + '. Wrap your '
+                'parameters in io_hptuning_config(...).')
         super(_HyperParameterTuning, self).__init__(io_config_input)
-        assert type(io_config_input)==io_hptuning_config
-
-        self.config = io_config_input
-        self.root = os.path.join(io_config_input.project_folder,
-                                 io_config_input.experiment_name)
-        if not os.path.exists(self.root):
-            os.makedirs(self.root)
         self.original_root = self.root
         self.timer = None
 
@@ -81,17 +81,7 @@ class _HyperParameterTuning(_Statistical_Project):
             # split the data with a stratification characteristic
             if self.config.training_portion<1.0:
                 # if training with less than the full dataset
-                try:
-                    strat = self.stratify_data(data_file, session_list)
-                except Exception as e:
-                    if type(e) == IndexError:
-                        raise IndexError('Using row index to group_data_by '
-                                         'requires that the '
-                                         'index of the dataframe be 0 to n. '
-                                         'Use df.reset_index() to avoid this '
-                                         'IndexError. ')
-                    else:
-                        raise e
+                strat = self.stratify_data(data_file, session_list)
                 # take the portion desired
                 _, session_list = train_test_split(
                     session_list,
@@ -100,17 +90,7 @@ class _HyperParameterTuning(_Statistical_Project):
                     random_state=self.config.r_seed
                 )
             # split the data with a stratification characteristic
-            try:
-                strat = self.stratify_data(data_file, session_list)
-            except Exception as e:
-                if type(e) == IndexError:
-                    raise IndexError('Using row index to group_data_by '
-                                     'requires that the '
-                                     'index of the dataframe be 0 to n. '
-                                     'Use df.reset_index() to avoid this '
-                                     'IndexError. ')
-                else:
-                    raise e
+            strat = self.stratify_data(data_file, session_list)
             train_list, val_list, test_list = self.stratified_data_split(
                 session_list, strat
             )
@@ -171,17 +151,21 @@ class _HyperParameterTuning(_Statistical_Project):
             self.parameter_configurations)) + ' parameter configurations to '
                                               'be explored. ')
 
-        # change paramter combinations based on the search technique
-        if self.config.technique=='Gridsearch':
+        # change parameter combinations based on the search technique
+        if self.config.technique=='GridSearch':
             # use all combos
             pass
         elif self.config.technique=='RandomSearch':
-            # use only a limited amount of randomly chosen paramters
+            # use only a limited amount of randomly chosen parameters
             np.random.shuffle(
                 self.parameter_configurations
             )
             self.parameter_configurations = self.parameter_configurations[
                                             :self.config.iterations]
+        else:
+            raise NotImplementedError(
+                str(self.config.technique) + ' is not an implemented '
+                'technique.')
 
 
     def get_gridpoint_args(self):
@@ -226,7 +210,9 @@ class _HyperParameterTuning(_Statistical_Project):
                 perf = self.evaluate_performance(
                     pd.read_csv(fl, na_filter=False)
                 )
-            except:
+            except Exception as e:
+                print('IO Message: WARNING: could not evaluate ' + fl +
+                      ': ' + type(e).__name__ + ': ' + str(e))
                 perf = 'FAIL'
             grid_pt_fldr = re.search(r'grid_point\d+', fl)
             ind = int(''.join([chr for chr in
@@ -268,8 +254,10 @@ class _HyperParameterTuning(_Statistical_Project):
         :return: the performance amount
         '''
         try:
-            eval_on = df[self.config.criterion].apply(eval).to_list()
-        except:
+            eval_on = df[self.config.criterion].apply(
+                ast.literal_eval).to_list()
+        except (ValueError, SyntaxError, TypeError):
+            # the criterion column holds plain scalars, not stringified lists
             eval_on = df[self.config.criterion].to_list()
         if self.config.penultimate=='mean':
             return np.mean(np.mean(eval_on,

@@ -125,6 +125,20 @@ class project_config(PretrainedConfig):
                 UserWarning, stacklevel=2
             )
 
+    def to_dict(self):
+        '''
+        Serialize to a dictionary, replacing values that cannot be stored in
+        json (for example a DataFrame passed as data_csv_location, or a
+        custom callable) with a placeholder string. The object itself is
+        untouched — only the saved record is sanitized.
+        :return: a json-serializable dictionary of this config
+        '''
+        output = super().to_dict()
+        for key, value in output.items():
+            if not is_primitive(value):
+                output[key] = '<unserializable: ' + type(value).__name__ + '>'
+        return output
+
     def save_pretrained(self, save_directory, push_to_hub=False, **kwargs):
         """
         Save a configuration object to the directory `save_directory` as

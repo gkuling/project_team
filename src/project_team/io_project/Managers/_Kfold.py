@@ -21,12 +21,13 @@ class _Kfold(_Statistical_Project):
     - Run a kfold experiment
     '''
     def __init__(self, io_config_input):
+        # validate before super() creates any directories on disk
+        if not isinstance(io_config_input, io_kfold_config):
+            raise TypeError(
+                '_Kfold requires an io_kfold_config, got ' +
+                type(io_config_input).__name__ + '. Wrap your parameters '
+                'in io_kfold_config(...).')
         super(_Kfold, self).__init__(io_config_input)
-        assert type(io_config_input)==io_kfold_config
-        self.config = io_config_input
-        self.root = os.path.join(io_config_input.project_folder, io_config_input.experiment_name)
-        if not os.path.exists(self.root):
-            os.makedirs(self.root)
         self.original_root = self.root
 
     def prepare_for_experiment(self):
@@ -166,7 +167,7 @@ class _Kfold(_Statistical_Project):
 
     def finished_kfold_validation(self):
         '''
-        after thje kfold validaiton is completed, this is ran to collect all
+        after the kfold validation is completed, this is ran to collect all
         the results and compile them into one results csv file
         :return:
         '''
@@ -181,43 +182,6 @@ class _Kfold(_Statistical_Project):
         k_fold_test_res = pd.concat(
             [pd.read_csv(fl, na_filter=False) for fl in k_fold_test_res]
         )
-
-        # Want to have different types of summaries based on the output,
-        # if it is a segmentation or classification/regression task
-        ### Might come back to this when a segmentation example is built. I
-        # am not sure what to do to make this flexible for segmentaiton tasks.
-        # May just take this out, could be better to have a segmentation
-        # evaluator
-        # if 'seg_map' in k_fold_test_res.columns and \
-        #         'Subject' in k_fold_test_res.columns:
-        #     summary = {nm:[] for nm in k_fold_test_res.columns}
-        #     if len(np.unique(k_fold_test_res['seg_map'].to_list()).tolist())>1:
-        #         raise NotImplementedError('Having an output of more than one '
-        #                                   'segmentation map is not implemented. '
-        #                                   'Changes to this class must be made. ')
-        #     summary['seg_map'].extend(
-        #         [np.unique(k_fold_test_res['seg_map'].to_list()).tolist()
-        #          for _ in range(2)]
-        #     )
-        #     summary['Subject'].extend(['Average', 'Std.Dev.'])
-        #
-        #     for key in summary.keys():
-        #         if key!='Subject' and key!='seg_map':
-        #             try:
-        #                 met_values = np.array(
-        #                     k_fold_test_res[key].apply(lambda x: eval(x)).to_list()
-        #                 )
-        #                 summary[key].append(met_values.mean(axis=0))
-        #                 summary[key].append(met_values.std(axis=0))
-        #             except:
-        #                 summary[key].extend(['',''])
-        #     summary = pd.DataFrame(summary)
-        #
-        #     output_results = pd.concat(
-        #         [k_fold_test_res, summary],
-        #         ignore_index=True
-        #     )
-        # else:
 
         # build a summary of the results
         k_fold_test_res.reset_index(drop=True, inplace=True)
@@ -240,13 +204,15 @@ class _Kfold(_Statistical_Project):
         "test_result_evaluation.csv"
         :return: the amount of folds finished
         '''
+        # scan the project folder, not self.root — set_fold() re-points
+        # self.root inside a fold directory
         folds_finished = [int(folder.split('Fold_')[1])
-                          for folder in os.listdir(self.root)
+                          for folder in os.listdir(self.original_root)
                           if 'Fold_' in folder and
                           os.path.exists(
                               os.path.join(
                                   os.path.join(
-                                      self.root,
+                                      self.original_root,
                                       folder
                                   ),
                                   'test_result_evaluation.csv'
