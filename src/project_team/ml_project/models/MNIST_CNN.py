@@ -42,19 +42,25 @@ class MNIST_CNN_config(project_config):
         self.numpy_shape = value
 
 class MNIST_CNN(nn.Module):
-    def __init__(self, config = MNIST_CNN_config()):
+    def __init__(self, config=None):
         '''
         MNIST CNN example model
         :param config:
         '''
         super(MNIST_CNN, self).__init__()
+        if config is None:
+            config = MNIST_CNN_config()
         self.config = config
         self.conv1 = nn.Conv2d(1, 32, self.config.kernel, 1)
         self.conv2 = nn.Conv2d(32, 64, self.config.kernel, 1)
         self.dropout1 = nn.Dropout(0.25)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(int(64*(self.config.numpy_shape[0]/2-2*int((self.config.kernel-1)/2))**2),
-                             self.config.hidden_layer_parameters)
+        # two stride-1 convs then a stride-2 pool leave a spatial size of
+        # H//2 - (kernel-1); this holds for even and odd kernels alike
+        self.fc1 = nn.Linear(
+            int(64 * (self.config.numpy_shape[0] // 2 -
+                      (self.config.kernel - 1)) ** 2),
+            self.config.hidden_layer_parameters)
         self.fc2 = nn.Linear(self.config.hidden_layer_parameters, 10)
 
     def forward(self, x):

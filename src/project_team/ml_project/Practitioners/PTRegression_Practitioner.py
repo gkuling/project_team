@@ -23,7 +23,7 @@ class PTRegression_Practitioner_config(PTPractitioner_config,
 
 class PTRegression_Practitioner(PT_Practitioner):
     def __init__(self, model, io_manager, data_processor,
-                 trainer_config=PTRegression_Practitioner_config()):
+                 trainer_config=None):
         '''
         constructor of the pytorch regression practitioner. Inherits the
         pytorch practitioner
@@ -33,14 +33,22 @@ class PTRegression_Practitioner(PT_Practitioner):
         :param trainer_config: the configuration that holds parameters for a
         practitioner
         '''
+        if trainer_config is None:
+            trainer_config = PTRegression_Practitioner_config()
         super(PTRegression_Practitioner, self).__init__(model=model,
                                                 io_manager=io_manager,
                                                 data_processor=data_processor,
                                                 trainer_config=trainer_config)
         self.practitioner_name = 'PTRegression'
-        # Standard transfroms for training would be in ensure all input and
-        # out put are tensors
-        self.subclass_standard_transforms = [
+
+    def get_subclass_standard_transforms(self):
+        '''
+        standard transforms ensuring the y value ends up a float tensor.
+        Declared as a method override (not an attribute set after __init__)
+        so the parent picks it up when it builds standard_transforms.
+        :return: list of transforms
+        '''
+        return [
             Cast_numpy(field_oi='y', data_type=np.float32),
             ToTensor(field_oi='y')
         ]
@@ -48,10 +56,9 @@ class PTRegression_Practitioner(PT_Practitioner):
     def validate_model(self, val_dataloader):
         '''
         function that will run validation of the model
-        :param val_dataloader: validation data laoder
+        :param val_dataloader: validation data loader
         :return: the overall validation loss
         '''
-        print('')
         self.model.eval()
         epoch_iterator = tqdm(val_dataloader, desc="  Validation",
                               position=0, leave=True)
@@ -141,17 +148,20 @@ class PTRegression_Practitioner(PT_Practitioner):
                 res['pred_y'] = (
                                         sigmoid(res['pred_y'])>0.5
                                 ).sum() / res['pred_y'].shape[1]
-            if style=='softlabel':
+            elif style=='softlabel':
                 res['pred_y'] = np.argmax(
                     res['pred_y']
                 ) / (res['pred_y'].shape[1] - 1)
-            if style=='continuous':
+            elif style=='continuous':
                 res['pred_y'] = res['pred_y'].item()
-            if style=='patchGAN':
+            elif style=='patchGAN':
                 res['pred_y'] = res['pred_y'].mean().item()
-            if style=='binary':
+            elif style=='binary':
                 res['pred_y'] = softmax(res['pred_y'],
                                         axis=1)[:,1].item()
+            else:
+                raise ValueError('the output_style is not recognized: ' +
+                                 str(style))
 
             return_results.append(res)
         # save results in the data_processor

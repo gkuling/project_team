@@ -42,18 +42,22 @@ class PTRegression_config(project_config):
 
 class PTRegressionModel(nn.Module):
     def __init__(self,
-                 config=PTRegression_config(),
+                 config=None,
                  encoder=None):
         '''
-        pytrochr egression model
-        :param config: confiuguration from above
+        pytorch regression model
+        :param config: configuration from above
         :param encoder: model encoder
         '''
         super(PTRegressionModel, self).__init__()
+        if config is None:
+            config = PTRegression_config()
         self.config = config
 
-        # if a custom encoder is disclosed, it must be given
-        assert config.encoder=='custom' and encoder is not None
+        # a custom encoder requires an encoder module to be passed in
+        if config.encoder == 'custom' and encoder is None:
+            raise ValueError("config.encoder=='custom' requires an encoder "
+                             "module to be passed to PTRegressionModel.")
         if encoder is not None:
             self.encoder = encoder
         elif config.encoder=='flatten':
@@ -62,7 +66,7 @@ class PTRegressionModel(nn.Module):
             )
         else:
             raise NotImplementedError(
-                str(config.encoder) + ' is not an implemented in '
+                str(config.encoder) + ' is not implemented in '
                                       'PTRegressionModel ')
         # have a flattener if assistance is needed
         if self.config.flatten_assist:

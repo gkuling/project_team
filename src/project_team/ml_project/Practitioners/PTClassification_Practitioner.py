@@ -24,7 +24,7 @@ class PTClassification_Practitioner_config(PTPractitioner_config,
 
 class PTClassification_Practitioner(PT_Practitioner):
     def __init__(self, model, io_manager, data_processor,
-                 trainer_config=PTClassification_Practitioner_config()):
+                 trainer_config=None):
         '''
         constructor of the pytorch classification practitioner. Inherits the
         pytorch practitioner
@@ -34,15 +34,23 @@ class PTClassification_Practitioner(PT_Practitioner):
         :param trainer_config: the configuration that holds parameters for a
         practitioner
         '''
+        if trainer_config is None:
+            trainer_config = PTClassification_Practitioner_config()
         super(PTClassification_Practitioner, self).__init__(model=model,
                                                 io_manager=io_manager,
                                                 data_processor=data_processor,
                                                 trainer_config=trainer_config)
 
         self.practitioner_name = 'PTClassification'
-        # Standard transfroms for training would be in ensure all input and
-        # out put are tensors
-        self.subclass_standard_transforms = [ToTensor(field_oi='y')]
+
+    def get_subclass_standard_transforms(self):
+        '''
+        standard transforms ensuring the y label ends up a tensor. Declared
+        as a method override (not an attribute set after __init__) so the
+        parent picks it up when it builds standard_transforms.
+        :return: list of transforms
+        '''
+        return [ToTensor(field_oi='y')]
 
     def validate_model(self, val_dataloader):
         '''
@@ -153,8 +161,8 @@ class PTClassification_Practitioner(PT_Practitioner):
                         if res['pred_y'][_]==1
                     ]
             else:
-                raise Exception(' the ouput_style is not recognized. ' + str(
-                    style))
+                raise ValueError('the output_style is not recognized: ' +
+                                 str(style))
 
 
             return_results.append(res)
