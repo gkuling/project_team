@@ -88,19 +88,24 @@ class ClassificationEval_Practitioner():
         '''
         print('ML Message: Beginning Evaluation of classification results.')
         self.setup_metrics_to_eval()
-        if type(data)==pd.DataFrame:
+        if isinstance(data, pd.DataFrame):
             pass
-        elif type(data)==list:
+        elif isinstance(data, list):
             data = pd.DataFrame(data)
         elif os.path.exists(data) and data.endswith('.csv'):
             data = pd.read_csv(data, na_filter=False)
         else:
-            raise Exception('The data given to the segmentation evaluator is '
-                            'not a list of results or a csv file. ')
+            raise TypeError('The data given to the classification evaluator '
+                            'is not a DataFrame, a list of results, or a '
+                            'path to a csv file.')
         if self.config.ground_truth!='y':
             data['y'] = data[self.config.ground_truth].values.tolist()
         if self.config.model_prediction!='pred_y':
             data['pred_y'] = data[self.config.model_prediction].values.tolist()
+        if self.pred_preprocess is not None:
+            data['pred_y'] = data['pred_y'].apply(self.pred_preprocess)
+        if self.gt_preprocess is not None:
+            data['y'] = data['y'].apply(self.gt_preprocess)
 
         for met in set([m.split('_')[0] for m in self.eval_results.keys()]):
             multiclass_res = self.evaluate_metric(
@@ -108,10 +113,11 @@ class ClassificationEval_Practitioner():
                 data['pred_y'].values[:, None],
                 data['y'].values[:, None]
             )
-            for lbl in self.config.classes:
-                self.eval_results[
-                    met + '_' + str(lbl)
-                ].append(multiclass_res[self.config.classes.index(lbl)])
+            if len(self.config.classes) > 1:
+                for i, lbl in enumerate(self.config.classes):
+                    self.eval_results[
+                        met + '_' + str(lbl)
+                    ].append(multiclass_res[i])
             if met == 'Acc.':
                 self.eval_results[
                     met + '_Overall'
@@ -133,33 +139,26 @@ class ClassificationEval_Practitioner():
         :param g: groundtruth
         :return: result
         '''
-        individual_label_maps = [(g==float(u),p==float(u)) for u in
-                                 range(int(np.unique(g).max())+1)]
-        if met=='DSC' or met=='F1':
+        # one binary map per configured class — built from config.classes
+        # directly, so offset, non-contiguous, or string labels all align
+        # with the per-class result columns
+        individual_label_maps = [(g==cls, p==cls)
+                                 for cls in self.config.classes]
+        if met=='F1':
             return [(2*(g_p*p_p).sum() + 1e-8)/(g_p.sum() + p_p.sum() + 1e-8)
                     for g_p,p_p in individual_label_maps]
-        elif met=='GDSC':
-            w = np.array([1/(g_p.sum()**2 + 1e-8) for g_p,p_p in \
-                    individual_label_maps])
-            intersection = np.array([(g_p*p_p).sum() + 1e-8
-                            for g_p,p_p in individual_label_maps])
-            denominator = np.array([(g_p.sum() + p_p.sum() + 1e-8)
-                            for g_p,p_p in individual_label_maps])
-            return [(2*(w*intersection)).sum()/(w*denominator).sum()]
         elif met=='Sens.':
             return [((g_p*p_p).sum() + 1e-8)/(g_p.sum() + 1e-8)
                     for g_p,p_p in individual_label_maps]
         elif met=='Spec.':
-            return [((g_p*p_p).sum() + 1e-8)/(p_p.sum() + 1e-8)
+            # specificity = TN / (TN + FP). Note: results computed before
+            # this fix were actually precision (TP / (TP + FP))
+            return [(((1-g_p)*(1-p_p)).sum() + 1e-8)/((1-g_p).sum() + 1e-8)
                     for g_p,p_p in individual_label_maps]
         elif met=='Acc.':
             return [((g_p*p_p).sum() +
                      ((1-g_p)*(1-p_p)).sum() + 1e-8)/
                     (g_p.sum() + (1-g_p).sum() + 1e-8)
                     for g_p,p_p in individual_label_maps]
-        elif met=='IOU':
-                return [((g_p*p_p).sum() + 1e-8)/(g_p.sum() + p_p.sum() - (
-                        g_p*p_p).sum() + 1e-8)
-                        for g_p,p_p in individual_label_maps]
         else:
             raise ValueError(met + ' is not an implemented metric. ')

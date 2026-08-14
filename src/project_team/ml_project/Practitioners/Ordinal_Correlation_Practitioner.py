@@ -66,20 +66,21 @@ class Ordinal_Correlation_Practitioner():
         :param dt: input data
         :return: list of a 5 number summary
         '''
-        max = np.max(dt)
-        min = np.min(dt)
+        max_val = np.max(dt)
+        min_val = np.min(dt)
         quartiles = np.percentile(dt, [25, 50, 75])
-        return [min] + list(quartiles) + [max]
+        return [min_val] + list(quartiles) + [max_val]
 
-    def plot_name(self, type, dtype):
+    def plot_name(self, plot_type, dtype):
         '''
         generate the name of the plot
-        :param type: the type of plot being saved
+        :param plot_type: the type of plot being saved
         :param dtype: the datatype to save the plot as
         :return: name of the plot that will be saved
         '''
-        _name = [] if self.config.graph_name==None else [self.config.graph_name]
-        _name.extend([type, self.config.exogenous])
+        _name = [] if self.config.graph_name is None \
+            else [self.config.graph_name]
+        _name.extend([plot_type, self.config.exogenous])
         return '.'.join(['_'.join(_name), dtype])
 
     def histogram_of_x(self, x):
@@ -157,6 +158,18 @@ class Ordinal_Correlation_Practitioner():
         res_dict['P_value'].append(test_result[1])
 
         # calculate the 95% confidence interval
+        # NOTE: this reuses the Pearson-r Fisher-z asymptotic standard
+        # error 1/sqrt(n-3) as an approximation; Kendall's tau has a
+        # different asymptotic variance (commonly approximated as
+        # sqrt(0.437/(n-4)), Fieller et al.). Changing the formula would
+        # change previously reported CIs, so it is documented rather than
+        # silently swapped.
+        if abs(test_result[0]) == 1.0:
+            # Fisher z is undefined at tau = +/-1 (division by zero)
+            print('ML Practitioner: WARNING: kendall tau is exactly +/-1; '
+                  'the Fisher-z confidence interval is undefined.')
+            res_dict['95%_CI'].append([np.nan, np.nan])
+            return res_dict
         r = 0.5 * np.log((1 + test_result[0]) / (1 - test_result[0]))
         num = len(dt)
         stderr = 1.0 / np.sqrt(num - 3)
@@ -189,6 +202,12 @@ class Ordinal_Correlation_Practitioner():
 
         # calculate the 95% confidence interval
         r = test_result[0]
+        if abs(r) == 1.0:
+            # Fisher z (arctanh) is undefined at r = +/-1
+            print('ML Practitioner: WARNING: spearman r is exactly +/-1; '
+                  'the Fisher-z confidence interval is undefined.')
+            res_dict['95%_CI'].append([np.nan, np.nan])
+            return res_dict
         num = len(dt)
         stderr = 1.0 / np.sqrt(num - 3)
         delta = 1.96 * stderr
