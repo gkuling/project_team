@@ -70,14 +70,14 @@ class Image_Processor(_Processor):
 
     def get_dataset(self, data, name, transforms):
         '''
-        function that sets the dataset atribute for the given name
+        function that sets the dataset attribute for the given name
         :param data: pandas dataframe to be loaded as a dataset
         :param name: the name of the dataset
         :param transforms: the pretransforms to be given to the dataset
         '''
         assert isinstance(data, pd.DataFrame)
-        # GCK: This is the point that I pctured having a different dataset
-        # for slice based images (for radiology data) or pathc based dataset
+        # GCK: This is the point that I pictured having a different dataset
+        # for slice based images (for radiology data) or patch based dataset
         # (for pathology and 2D data)
         setattr(self, name, Images_Dataset(
             data,

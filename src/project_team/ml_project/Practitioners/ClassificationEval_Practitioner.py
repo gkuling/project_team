@@ -58,7 +58,7 @@ class ClassificationEval_Practitioner():
 
     def setup_metrics_to_eval(self):
         '''
-        set up the dirctionary to save results of evaluation
+        set up the dictionary to save results of evaluation
         '''
         self.eval_results = {}
         if self.config.F1:
@@ -82,7 +82,7 @@ class ClassificationEval_Practitioner():
 
     def evaluate(self, data):
         '''
-        Run the evaluation of the data. The results are saved as an atribute
+        Run the evaluation of the data. The results are saved as an attribute
         named "eval_results".
         :param data: input of the results
         '''

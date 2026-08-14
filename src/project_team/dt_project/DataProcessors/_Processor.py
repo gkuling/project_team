@@ -91,7 +91,7 @@ class _Processor(object):
         set a dataset of a specific name
         :param csv_location: csv location of the data or a dataframe
         :param set_name: the name of the set to be loaded
-        :param pre_process_y: boolean on whther to preprocess y label or not
+        :param pre_process_y: boolean on whether to preprocess y label or not
         '''
         assert type(set_name) == str
         if set_name == 'if_dset':

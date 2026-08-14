@@ -150,7 +150,7 @@ class Project_Team_Dataset(Dataset):
         self.catalogue = {}
         cnt = 0
         for ex in tqdm(input_data_list,
-                       desc='Transfering data from list'):
+                       desc='Transferring data from list'):
 
             ex = {k:v for k,v in ex.items() if 'meta_data' not in k}
 

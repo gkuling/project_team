@@ -35,7 +35,7 @@ class PTRegression_config(project_config):
         if output_style!='continuous' and regressor_output==1:
             print('WARNING: PTRegression config: output style is not '
                   'continuous and your output size is 1. Output size must be '
-                  '>1 to truely perform correctly. ')
+                  '>1 to truly perform correctly. ')
         self.regressor_output = regressor_output
 
 
@@ -97,8 +97,8 @@ class PTRegressionModel(nn.Module):
         forward pass on x
         :param x: input tensor
         :param return_latent: bool. Whether to return the model latent tensor
-        from before the regssion head
-        :return: output of the model and laten space is requested
+        from before the regression head
+        :return: output of the model, and the latent space if requested
         '''
 
         # obtain the latent space

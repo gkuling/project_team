@@ -51,7 +51,7 @@ class Ordinal_Correlation_Practitioner():
                  io_manager):
         '''
         constructor for the ordinal correlation practitioner
-        :param config: confiuration file
+        :param config: configuration file
         :param dt_processor: the data processor for the project
         :param io_manager: the inputoutput manager for the project
         '''
@@ -141,7 +141,7 @@ class Ordinal_Correlation_Practitioner():
 
     def calculate_kendall_tau(self, dt, res_dict):
         '''
-        run kendall tau statisical analysis on dt
+        run kendall tau statistical analysis on dt
         :param dt: the dataset to run analysis on. List of tuples.
         :param res_dict: the dictionary to save the results. Must have a
         'Coefficient', 'P_value', and '95%_CI' keys
@@ -184,7 +184,7 @@ class Ordinal_Correlation_Practitioner():
 
     def calculate_spearman_r(self, dt, res_dict):
         '''
-        run spearman r statisical analysis on dt
+        run spearman r statistical analysis on dt
         :param dt: the dataset to run analysis on. List of tuples.
         :param res_dict: the dictionary to save the results. Must have a
         'Coefficient', 'P_value', and '95%_CI' keys

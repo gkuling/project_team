@@ -192,7 +192,7 @@ class PTPractitioner_config(project_config):
         setting the affien augmentatiion parameters
         :param shift: tuple or list. the shift in each dimension
         :param rot: tuple or list. rotation on each axis
-        :param scale: tuple or list. the portion fo scaling
+        :param scale: tuple or list. the portion of scaling
         :param uniform_scale: bule whether to sample augmentation from a
             uniform distribution or a gaussian
         :param order: the level of interpolation in resampling. 0=nearest,
@@ -557,7 +557,7 @@ class PT_Practitioner(object):
 
     def train_model(self):
         '''
-        A function that calls all the tasks neccessary to train a model based
+        A function that calls all the tasks necessary to train a model based
         on the parameters in the practitioner config.
         '''
 
@@ -634,7 +634,7 @@ class PT_Practitioner(object):
                         if split_multiple>self.config.batch_size:
                             raise RuntimeError(
                                 "The GPU you are trying to spoof on cannot "
-                                "hadle one training example. This "
+                                "handle one training example. This "
                                 "practitioner cannot calculate a single step "
                                 "now. ")
                         try:

@@ -36,7 +36,7 @@ class _Kfold(_Statistical_Project):
         1. Load data sets
         2. Rename columns for X and y so they are consistent in downstream
             tasks
-        4. Split the data into folds for validaiton
+        4. Split the data into folds for validation
         3. save the data used in the experiment folder for records
         '''
         print('IO Message: Setting up data for kfold experiment')
@@ -60,7 +60,7 @@ class _Kfold(_Statistical_Project):
                         session_list,
                         strat
                 ):
-                    # seperate a validaiton set from the training set
+                    # separate a validation set from the training set
                     train_index, val_index = train_test_split(
                         train_index,
                         stratify=[strat[ind] for ind in train_index],
@@ -107,7 +107,7 @@ class _Kfold(_Statistical_Project):
                     )
 
             else:
-                # split the data without a validaiton set
+                # split the data without a validation set
                 kfold_analyzer = KFold(n_splits=self.config.k_folds,
                                        shuffle=True,
                                        random_state=self.config.r_seed)

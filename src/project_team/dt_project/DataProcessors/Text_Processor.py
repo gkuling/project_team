@@ -57,7 +57,7 @@ class Text_Processor(_Processor):
 
     def get_dataset(self, data, name, transforms):
         '''
-        function that sets the dataset atribute for the given name
+        function that sets the dataset attribute for the given name
         :param data: pandas dataframe to be loaded as a dataset
         :param name: the name of the dataset
         :param transforms: the pretransforms to be given to the dataset

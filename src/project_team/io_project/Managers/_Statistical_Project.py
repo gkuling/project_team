@@ -86,7 +86,7 @@ class _Statistical_Project():
         '''
         stratified split of data for training, val, and test, given the portions that are declared in the config.
         :param list_examples: list of example labels from the 'group_data_by' config setting
-        :param stratification: a list of coresponding values that stratification is based on
+        :param stratification: a list of corresponding values that stratification is based on
         :return: train_list, val_list, and test_list of the group_data_by characteristic
         '''
         val_list = None
@@ -157,7 +157,7 @@ class _Statistical_Project():
         the function will determine the stratification quality the data has
         given the sessions and stratify_by
         :param data: dataset
-        :param sessions: list of individual unqiue identifiers based on
+        :param sessions: list of individual unique identifiers based on
         group_data_by
         :return: a list of the stratification quality based on stratify_by
         '''

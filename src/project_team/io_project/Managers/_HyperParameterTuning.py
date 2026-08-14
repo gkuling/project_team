@@ -272,5 +272,5 @@ class _HyperParameterTuning(_Statistical_Project):
             return df[self.config.criterion].item()
         else:
             raise NotImplementedError(
-                str(self.config.penultimate) + ' is not implmented. '
+                str(self.config.penultimate) + ' is not implemented. '
             )

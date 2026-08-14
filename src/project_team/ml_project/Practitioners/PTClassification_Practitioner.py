@@ -55,7 +55,7 @@ class PTClassification_Practitioner(PT_Practitioner):
     def validate_model(self, val_dataloader):
         '''
         function that will run validation of the model
-        :param val_dataloader: validation data laoder
+        :param val_dataloader: validation data loader
         :return: the overall validation loss
         '''
         # print('')
@@ -85,14 +85,14 @@ class PTClassification_Practitioner(PT_Practitioner):
                     {'loss': np.round(loss, decimals=2).tolist()}
                 )
                 vl_lss.append(loss)
-        # calculate average loss for the validaiton data
+        # calculate average loss for the validation data
         vl_loss = np.array(vl_lss).mean(0)
         print(" ML Message: Validation Loss: " + str(vl_loss))
         return vl_loss[0]
 
     def run_inference(self, return_output=False):
         '''
-        run inference on the iference dataset in the processor
+        run inference on the inference dataset in the processor
         :param: return_output: bool to indicate logits are desired with the
         results
         :return: all prediction results are saved on the data processor

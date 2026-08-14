@@ -7,8 +7,8 @@ perform a Train-Test Split experiment
 
 Input: a working_dir (working directory) to perform the experiment in
 Output: in the working directory there will be configs for the manager,
-processor, practitioner, and model. Checkpoint saves will be intheir own
-folder. Datsets will be saved in individual csv files. Final model weights as a
+processor, practitioner, and model. Checkpoint saves will be in their own
+folder. Datasets will be saved in individual csv files. Final model weights as a
 pth file.
 '''
 
@@ -17,7 +17,6 @@ import argparse
 import pandas as pd
 from scipy.stats import spearmanr
 from torchvision import datasets
-from sklearn.metrics import accuracy_score
 
 import project_team as proteam
 import os
