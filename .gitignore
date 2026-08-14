@@ -1,4 +1,3 @@
-@@ -0,0 +1,129 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -129,8 +128,21 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# pcharm
+# pycharm
 .idea/
 .idea/workspace.xml
 .idea/.name
-*.json
+
+# Generated experiment outputs (framework configs are meant to be tracked,
+# so do NOT ignore *.json here)
+data/
+raw_mnist/
+project_team_runs/
+Experiment_on_*/
+MNIST_TrainTestSplit/
+MNIST_KFold*/
+MNIST_HPTuning*/
+MNIST_Regression*/
+*.pth
+*.png
+!img/*.png
