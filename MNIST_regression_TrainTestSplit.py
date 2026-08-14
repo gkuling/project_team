@@ -21,12 +21,12 @@ from sklearn.metrics import accuracy_score
 
 import project_team as proteam
 import os
-from default_arguements import dt_args, ml_args, mdl_args
+from default_arguments import dt_args, ml_args, mdl_args
 
 r_seed = 20230117
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--working_dir',type=str,
-                    default='/amartel_data/Grey/pro_team_examples',
+                    default=os.path.join(os.getcwd(), 'project_team_runs'),
                     help='The current directory to save models, and configs '
                          'of the experiment')
 parser.add_argument('--start_from_checkpoint', action='store_true',
@@ -36,11 +36,11 @@ opt = parser.parse_args()
 # Prepare data if not already saved and set up
 if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
     if not os.path.exists(os.path.join(opt.working_dir, 'data')):
-        os.mkdir(os.path.join(opt.working_dir, 'data'))
+        os.makedirs(os.path.join(opt.working_dir, 'data'))
 
-    dataset1 = datasets.MNIST('../data', train=True, download=True)
+    dataset1 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=True, download=True)
 
-    dataset2 = datasets.MNIST('../data', train=False)
+    dataset2 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=False)
     all_data = []
     cnt = 0
     for ex in dataset1:
@@ -108,7 +108,7 @@ mdl = proteam.models.PTRegressionModel(
     encoder=mdl,
     config=proteam.models.PTRegression_config(
         encoder='custom',
-        regresser_input=10,
+        regressor_input=10,
         regressor_output=1,
         flatten_assist=False,
         output_style='continuous'
@@ -148,7 +148,7 @@ practitioner.run_inference()
 test_results = processor.inference_results
 
 # Evaluate Inference Results
-print('Model Accuracy: ' +
+print('Spearman correlation (rho, p-value): ' +
       str(spearmanr(test_results['y'], test_results['pred_y'])))
 
 print('End of MNIST_regression_TrainTestSplit.py')

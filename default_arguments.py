@@ -19,7 +19,6 @@ ml_args = {
     'normalization_percentiles':'auto_min_max',
     'normalization_channels':'auto',
     'n_workers':0,
-    'visualize_val':False,
     'data_parallel':False
 }
 
@@ -35,6 +34,5 @@ dt_args={
 mdl_args = {
     'kernel': 5,
     'hidden_layer_parameters': 128,
-    'output_style': 'softmax',
-    'input_shape': (28, 28)
+    'numpy_shape': (28, 28)
 }

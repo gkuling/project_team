@@ -22,7 +22,7 @@ import os
 r_seed = 2023322
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--working_dir',type=str,
-                    default='/amartel_data/Grey/pro_team_examples',
+                    default=os.path.join(os.getcwd(), 'project_team_runs'),
                     help='The current directory to save models, and configs '
                          'of the experiment')
 opt = parser.parse_args()
@@ -30,11 +30,11 @@ opt = parser.parse_args()
 # Prepare data if not already saved and set up
 if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
     if not os.path.exists(os.path.join(opt.working_dir, 'data')):
-        os.mkdir(os.path.join(opt.working_dir, 'data'))
+        os.makedirs(os.path.join(opt.working_dir, 'data'))
 
-    dataset1 = datasets.MNIST('../data', train=True, download=True)
+    dataset1 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=True, download=True)
 
-    dataset2 = datasets.MNIST('../data', train=False)
+    dataset2 = datasets.MNIST(os.path.join(opt.working_dir, 'raw_mnist'), train=False)
     all_data = []
     cnt = 0
     for ex in dataset1:
@@ -64,7 +64,7 @@ if not os.path.exists(os.path.join(opt.working_dir, 'data','dataset_info.csv')):
 
 # Prepare Manager
 # Here use all the same parameters as the Train/Test Split example
-from default_arguements import dt_args, ml_args
+from default_arguments import dt_args, ml_args
 
 io_args = {
     'data_csv_location':os.path.join(opt.working_dir,
@@ -154,8 +154,7 @@ for i_run in range(manager.config.iteration,
         practitioner.run_inference()
         evaluator = ml_project.ClassificationEval_Practitioner(
             config=ml_project.ClassificationEval_Practitioner_config(
-                classes=io_project_cnfg.y_domain,
-                save_folder=manager.root
+                classes=io_project_cnfg.y_domain
             )
         )
         evaluator.evaluate(processor.inference_results)
@@ -164,21 +163,14 @@ for i_run in range(manager.config.iteration,
         manager.save_dataframe(evaluator.eval_results, 'test_result_evaluation')
         print(' Finished running parameters with performance of: ' + str(
             performance))
-    except AssertionError as e:
-        manager.save_dataframe(
-            pd.DataFrame({'Result': ['FAIL'],
-                          'Error': [str(type(e)) + '-' + str(e)]}),
-            'test_result_evaluation'
-        )
-        print(' Finished running parameters, but there was a failure')
-
     except Exception as e:
         manager.save_dataframe(
             pd.DataFrame({'Result': ['FAIL'],
-                          'Error': [str(type(e)) + '-' + str(e)]}),
+                          'Error': [type(e).__name__ + '-' + str(e)]}),
             'test_result_evaluation'
         )
-        print(' Finished running parameters, but there was a failure')
+        print(' Finished running parameters, but there was a failure: ' +
+              type(e).__name__ + ': ' + str(e))
 
     manager.record_performance()
 
