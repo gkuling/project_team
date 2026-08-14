@@ -13,10 +13,13 @@ from project_team.dt_project.dt_processing import Add_Channel, \
     Clip_Numpy
 
 class PTPractitioner_config(project_config):
+    # derived state written by __init__, restored via kwargs on reload
+    _derived_config_keys = frozenset({'affine_aug_params'})
+
     def __init__(self,
                  batch_size=2,
                  n_epochs=1,
-                 n_steps=1,
+                 n_steps=None,
                  warmup=0.05,
                  n_saves=10,
                  validation_criteria='min',
@@ -37,13 +40,17 @@ class PTPractitioner_config(project_config):
                  data_parallel=False,
                  collate_function=None,
                  batch_spoofing=False,
+                 trained_steps=0,
+                 best_vl_loss=None,
+                 best_vl_step=0,
+                 vl_interval=None,
                  **kwargs):
         '''
         Config file for a pytorch practitioner
         :param batch_size: mini batch size
         :param n_epochs: amount of epochs to run
-        :param n_steps: amount of training iterations/steps to run
-            (optional: if n_epochs is given)
+        :param n_steps: amount of training iterations/steps to run. Leave as
+            None (the default) to train by epochs only
         :param warmup: Portion of training used for warmup steps
         :param n_saves: amount of times validation is run and the model saved
         :param validation_criteria: choice of whether the validation loss is
@@ -58,7 +65,7 @@ class PTPractitioner_config(project_config):
             either every 'batch' or every 'epoch'
         :param grad_clip: gradient clip value
         :param loss_type: loss function
-        :param affine_aug: indicate affien augmentation is being used
+        :param affine_aug: indicate affine augmentation is being used
         :param add_Gnoise: indicate whether gaussian noise will be added to
             the images
         :param gaussian_std: standard deviation of the gaussian noise added
@@ -69,12 +76,29 @@ class PTPractitioner_config(project_config):
             deviations used
         :param n_workers: number of worker that are used by the data loader
         :param data_parallel: indicator if data parallel is desired
-        :param collate_function: collate function for the batch data
-        :param batch_spoofing: indicator of whther to use bacth spoofing or not
-        :param kwargs: any extra keywords are given. Thoise not used are
-            discarded.
+        :param collate_function: collate function for the batch data. Either
+            a callable (cannot be saved to json) or the string 'same_size'
+        :param batch_spoofing: indicator of whether to use batch spoofing
+            or not
+        :param trained_steps: running count of completed training steps.
+            A named parameter so a reloaded checkpoint config resumes
+            training where it stopped
+        :param best_vl_loss: best validation loss seen so far. None (the
+            default) means no validation has run yet. None is used instead
+            of +/-inf because inf is not valid json
+        :param best_vl_step: the step at which best_vl_loss was recorded
+        :param vl_interval: steps between validation/save points. Computed
+            from n_steps/n_saves when None
+        :param kwargs: any extra keywords are stored as config attributes
+            (the huggingface convention); unrecognized names trigger a
+            warning naming the closest real parameter
         '''
-        super(PTPractitioner_config, self).__init__('ML_PTPractitioner')
+        # NOTE: trained_steps/best_vl_loss/best_vl_step live on the config,
+        # not the practitioner, because the config is what gets checkpointed
+        # — this is how training resumes mid-run. The config holds both
+        # hyperparameters and mutable run state by design.
+        kwargs.setdefault('config_type', 'ML_PTPractitioner')
+        super(PTPractitioner_config, self).__init__(**kwargs)
         # Training Parameters
         self.loss_type = loss_type
         self.batch_size=batch_size
@@ -84,27 +108,29 @@ class PTPractitioner_config(project_config):
         # be easily calculated.
         if n_steps is not None:
             self.n_steps = n_steps
-            self.vl_interval = int(np.round(self.n_steps / self.n_saves))
+            if vl_interval is None:
+                vl_interval = max(1, int(np.round(self.n_steps /
+                                                  self.n_saves)))
+            self.vl_interval = vl_interval
         else:
             self.n_steps = None
-            self.vl_interval = None
+            self.vl_interval = vl_interval
         self.warmup = warmup
         self.lr_decay = lr_decay
         self.lr_decay_stepsize = lr_decay_stepsize
         self.lr_decay_gamma = lr_decay_gamma
-        assert lr_decay_step_timing=='epoch' or lr_decay_step_timing=='batch'
+        if lr_decay_step_timing not in ('epoch', 'batch'):
+            raise ValueError(
+                "lr_decay_step_timing must be 'epoch' or 'batch', got " +
+                repr(lr_decay_step_timing))
         self.lr_decay_step_timing = lr_decay_step_timing
         self.optimizer = optimizer
         self.lr = lr
         self.grad_clip = grad_clip
-        self.trained_steps = 0
+        self.trained_steps = trained_steps
         self.data_parallel = data_parallel
-        if validation_criteria=='min':
-            self.best_vl_loss = np.inf
-            self.best_vl_step = 0
-        else:
-            self.best_vl_loss = -np.inf
-            self.best_vl_step = 0
+        self.best_vl_loss = best_vl_loss
+        self.best_vl_step = best_vl_step
 
         self.validation_criteria = validation_criteria
         self.n_workers = n_workers
@@ -116,20 +142,33 @@ class PTPractitioner_config(project_config):
         self.add_Gnoise = add_Gnoise
         self.gaussian_std=gaussian_std
         self.affine_aug = affine_aug
-        if affine_aug:
+        if affine_aug and not hasattr(self, 'affine_aug_params'):
+            # hasattr guard: a reloaded config restores affine_aug_params
+            # through kwargs, and re-initializing would clobber it
             self.initialize_augmentation_parameters()
-        if collate_function is not None:
-            if hasattr(collate_function, '__call__'):
-                self.collate_function = collate_function
-            elif collate_function=='same_size':
-                self.collate_function = F.make_all_tensors_same_size
-            else:
-                raise Exception(str(collate_function) +
-                                ' is not a recognized collate_function option. '
-                                'Must be a custom function or "same_size". '
-                                'Should implement more of these. ')
-        else:
-            self.collate_function = None
+        if collate_function is not None and \
+                not callable(collate_function) and \
+                collate_function != 'same_size':
+            raise ValueError(str(collate_function) +
+                             ' is not a recognized collate_function option. '
+                             'Must be a custom function or "same_size".')
+        # the spec (string or None) is stored so the config stays
+        # json-serializable; get_collate_function() resolves it to a callable
+        self.collate_function = collate_function
+
+    def get_collate_function(self):
+        '''
+        resolve the stored collate_function spec into the callable handed to
+        a DataLoader
+        :return: a callable or None
+        '''
+        if self.collate_function is None or callable(self.collate_function):
+            return self.collate_function
+        if self.collate_function == 'same_size':
+            return F.make_all_tensors_same_size
+        raise ValueError(str(self.collate_function) +
+                         ' is not a recognized collate_function option. '
+                         'Must be a custom function or "same_size".')
 
     def initialize_augmentation_parameters(self):
         '''

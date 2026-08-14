@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..project_config import is_Primitive
+from ..project_config import is_primitive
 import pandas as pd
 from torch.utils.data import Dataset
 from copy import deepcopy
@@ -66,7 +66,7 @@ class Project_Team_Dataset(Dataset):
                 # files_silo if it is not a Primitive data type or it isn't
                 # the same as it was prior to transformation it will be stored.
                 items_to_save = [key for key in pre_loaded_ex.keys()
-                                 if not is_Primitive(post_loaded_ex[key]) or
+                                 if not is_primitive(post_loaded_ex[key]) or
                                  post_loaded_ex[key]!=pre_loaded_ex[key]]
 
                 # Take a data fingerprint if it is appropriate
@@ -138,7 +138,7 @@ class Project_Team_Dataset(Dataset):
                 ex = self.preload_transforms(ex)
             dfile_ex = {}
             for k,v in ex.items():
-                if is_Primitive(v):
+                if is_primitive(v):
                     dfile_ex[k] = v
                 else:
                     dfile_ex[k] = 'save_name_' + str(cnt)

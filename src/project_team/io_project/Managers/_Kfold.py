@@ -10,7 +10,8 @@ class io_kfold_config(io_config):
     Configuration for a KFold Validation experiment
     '''
     def __init__(self, k_folds=5, data_csv_location=None, **kwargs):
-        super(io_kfold_config, self).__init__(data_csv_location, **kwargs)
+        super(io_kfold_config, self).__init__(
+            data_csv_location=data_csv_location, **kwargs)
         self.k_folds = k_folds
 
 class _Kfold(_Statistical_Project):

@@ -15,10 +15,10 @@ class io_hptuning_config(io_config):
     '''
     def __init__(self, data_csv_location=None, technique='GridSearch',
                  training_portion=1.0, criterion= 'ACC', iterations=1,
-                 penultimate=None,
+                 penultimate=None, iteration=0,
                  **kwargs):
         '''
-        :param data_csv_location: data set dsv file or dataframe containing
+        :param data_csv_location: data set csv file or dataframe containing
         the data
         :param technique: technique for performing HPTuning, currently only
         have GridSearch and RandomSearch
@@ -27,14 +27,21 @@ class io_hptuning_config(io_config):
         :param criterion: The criteria that you use to determine success
         :param iterations: for the RandomSearch you decide how many
         parameters to search over
+        :param iteration: runtime counter of grid points already dispatched.
+        It is a named parameter (not just an attribute) so a reloaded config
+        resumes the search where it stopped instead of restarting from 0
         :param kwargs:
         '''
-        super(io_hptuning_config, self).__init__(data_csv_location, **kwargs)
+        super(io_hptuning_config, self).__init__(
+            data_csv_location=data_csv_location, **kwargs)
         technique_possibilities = [
             'GridSearch', 'RandomSearch'
         ]
-        assert technique in technique_possibilities, "Tuning Technique must be in " + str(technique_possibilities)
-        self.iteration = 0
+        if technique not in technique_possibilities:
+            raise ValueError(
+                'technique must be one of ' + str(technique_possibilities) +
+                ', got ' + repr(technique))
+        self.iteration = iteration
         self.technique = technique
         self.training_portion = training_portion
         self.criterion = criterion
@@ -185,8 +192,10 @@ class _HyperParameterTuning(_Statistical_Project):
         # get the new point
         gridpoint_args = self.parameter_configurations[self.config.iteration]
 
-        # keep track of iterations
+        # keep track of iterations, and re-save the config so an interrupted
+        # search can resume from the saved counter instead of grid point 0
         self.config.iteration += 1
+        self.config.save_pretrained(self.original_root)
 
         # change the root for the new point
         self.root = os.path.join(self.original_root,

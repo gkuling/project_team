@@ -5,7 +5,7 @@ import gc
 import numpy as np
 from scipy.special import expit as sigmoid
 
-from project_team.project_config import project_config, is_Primitive
+from project_team.project_config import project_config, is_primitive
 from .PT_Practitioner import PTPractitioner_config, PT_Practitioner
 from torchvision import transforms
 from project_team.dt_project.dt_processing import ToTensor
@@ -18,9 +18,8 @@ class PTClassification_Practitioner_config(PTPractitioner_config,
         Specific configuration for running pytorch classification
         practitioner
         '''
-        super(PTClassification_Practitioner_config, self).__init__(
-            config_type ='ML_PTClassificationPractitioner', **kwargs
-        )
+        kwargs.setdefault('config_type', 'ML_PTClassificationPractitioner')
+        super(PTClassification_Practitioner_config, self).__init__(**kwargs)
 
 
 class PTClassification_Practitioner(PT_Practitioner):
@@ -166,7 +165,7 @@ class PTClassification_Practitioner(PT_Practitioner):
         else:
             self.data_processor.inference_results = pd.DataFrame(
                 [
-                    {ky:v for ky, v in ex.items() if is_Primitive(v)}
+                    {ky:v for ky, v in ex.items() if is_primitive(v)}
                     for ex in return_results
                 ]
             )

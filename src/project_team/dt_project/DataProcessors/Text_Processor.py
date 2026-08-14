@@ -19,11 +19,19 @@ class Text_Processor_config(DT_config):
         '''
         :param tokenizer: required for converting text data into tokens. Currently only programmed
             to handle transformer tokenizers
-        :param model: The type of model tokenizer to load
+        :param model: the checkpoint name or path handed to the tokenizer's
+            from_pretrained(), e.g. 'bert-base-uncased'. Required
         :param pre_load: see parent class
         :param kwargs:
         '''
-        super(Text_Processor_config, self).__init__(pre_load, **kwargs)
+        super(Text_Processor_config, self).__init__(
+            pre_load=pre_load, **kwargs)
+        if model is None:
+            raise ValueError(
+                "Text_Processor_config requires 'model' — the checkpoint "
+                "name or path passed to the tokenizer's from_pretrained(), "
+                "e.g. Text_Processor_config('BertTokenizerFast', "
+                "'bert-base-uncased').")
         self.tokenizer = tokenizer
         self.model = model
         self.max_length = max_length
@@ -32,7 +40,7 @@ class Text_Processor(_Processor):
     '''
     a text processor parent class
     '''
-    def __init__(self, text_processor_config=Text_Processor_config('BertTokenizerFast')):
+    def __init__(self, text_processor_config):
         '''
         :param text_processor_config: a text processor config
         '''

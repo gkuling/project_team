@@ -15,9 +15,15 @@ class DT_config(project_config):
         initiator of a dataprocessor config
         :param pre_load: boolean to indicate whether data should be preloaded
         into memory or loaded on the fly
-        :param kwargs:
+        :param filter_out_zero_X: boolean to drop examples whose processed X
+        is all zeros (for example a blank image)
+        :param debug_pretransform: boolean. When True, a failing pretransform
+        re-raises its original exception instead of dropping the example
+        :param kwargs: extra keywords are stored as config attributes (the
+        huggingface convention); unrecognized names trigger a warning
         '''
-        super(DT_config, self).__init__('DT')
+        kwargs.setdefault('config_type', 'DT')
+        super(DT_config, self).__init__(**kwargs)
         self.pre_load = pre_load
         self.filter_out_zero_X = filter_out_zero_X
         self.debug_pretransform = debug_pretransform

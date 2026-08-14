@@ -1,4 +1,4 @@
-from project_team.project_config import is_Primitive
+from project_team.project_config import is_primitive
 
 from copy import deepcopy
 import torch
@@ -14,8 +14,8 @@ def reduce_by_sum_sitk(list_of_data, reduction_by='X_location'):
         result = deepcopy(res[0])
         for next in res[1:]:
             for k in result.keys():
-                if is_Primitive(result[k]) and is_Primitive(next[k]) and \
-                        is_Primitive(result[k]) == is_Primitive(next[k]):
+                if is_primitive(result[k]) and is_primitive(next[k]) and \
+                        is_primitive(result[k]) == is_primitive(next[k]):
                     result[k] = result[k]
                 else:
                     if all([type(v)==sitk.Image for v in result[k]]) and all([

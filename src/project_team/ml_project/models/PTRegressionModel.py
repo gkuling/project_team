@@ -11,10 +11,10 @@ class PTRegression_config(project_config):
                  output_style='continuous',
                  **kwargs):
         '''
-        Pyotorhc model with a regression head
+        Pytorch model with a regression head
         :param encoder: a name for the given encoder or "flatten" which will
-        just flattent all dimensions after batchsize
-        :param regresser_input: input size for regression head
+        just flatten all dimensions after batchsize
+        :param regressor_input: input size for regression head
         :param regressor_output: output size for regression head
         :param flatten_assist: assistance in flattening before sending it
         through the regression head. default: False
@@ -26,7 +26,8 @@ class PTRegression_config(project_config):
             'binary': a 2 length output where the likelihood of 1 is the
             regression amount.
         '''
-        super(PTRegression_config, self).__init__('model_PTRegression')
+        kwargs.setdefault('config_type', 'model_PTRegression')
+        super(PTRegression_config, self).__init__(**kwargs)
         self.encoder = encoder
         self.regressor_input = regressor_input
         self.flatten_assist = flatten_assist

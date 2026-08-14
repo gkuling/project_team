@@ -27,12 +27,13 @@ class ClassificationEval_Practitioner_config(project_config):
         :param sensitivity: include the sensitivity in the evaluation
         :param specificity: include the specificity in the evaluation
         :param accuracy: include the accuracy in the evaluation
-        :param save_folder: the folder to save the results
         '''
-        super(ClassificationEval_Practitioner_config, self).__init__(
-            'ML_ClassificationEvalPractitioner')
+        kwargs.setdefault('config_type', 'ML_ClassificationEvalPractitioner')
+        super(ClassificationEval_Practitioner_config, self).__init__(**kwargs)
 
-        assert (type(classes)==list)
+        if not isinstance(classes, list):
+            raise TypeError('classes must be a list of the ground truth '
+                            'class labels, got ' + repr(type(classes)))
         self.classes = classes
         self.ground_truth = ground_truth
         self.model_prediction = model_prediction
@@ -41,7 +42,6 @@ class ClassificationEval_Practitioner_config(project_config):
         self.sensitivity=sensitivity
         self.specificity=specificity
         self.accuracy=accuracy
-        self.save_folder = save_folder
 
 class ClassificationEval_Practitioner():
     def __init__(self, config, pred_preprocess=None, gt_preprocess=None):
