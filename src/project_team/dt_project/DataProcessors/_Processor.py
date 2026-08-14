@@ -33,7 +33,9 @@ class _Processor(object):
     a processor parent class
     '''
 
-    def __init__(self, config=DT_config()):
+    def __init__(self, config=None):
+        if config is None:
+            config = DT_config()
         self.config = config
 
     def get_dataset(self, data, name, transforms):
@@ -103,13 +105,13 @@ class _Processor(object):
 
         print('DT message: Setting up the {} dataset. '.format(pr_name))
 
-        if type(csv_location) == pd.DataFrame:
+        if isinstance(csv_location, pd.DataFrame):
             pass
         else:
             if not os.path.exists(
                     os.path.join(csv_location, '{}.csv'.format(set_name))
             ):
-                raise FileExistsError(
+                raise FileNotFoundError(
                     csv_location + ' does not contain a {}.csv '.format(
                         set_name))
             csv_location = pd.read_csv(
@@ -135,7 +137,7 @@ class _Processor(object):
         self.get_dataset(csv_location, set_name, pre_transforms)
         # pre_load the data
         if self.config.pre_load:
-            getattr(getattr(self, set_name), 'perform_preload').__call__()
+            getattr(self, set_name).perform_preload()
 
     def set_dataset_filter(self,dataset_lambda_condition):
         '''
@@ -151,34 +153,6 @@ class _Processor(object):
 
         if hasattr(self, 'if_dset'):
             self.if_dset.set_filter(dataset_lambda_condition)
-    # GCK: Abandoned function that could be revived
-    # For a project I wanted to transfer data from one dataset to another
-    # with different pretransforms for two different ML algorithms, so I would
-    # have to transfer the  results to the original data space, and then
-    # transfer to the second algorithms  data space
-    #
-    # def transfer_dataset(self, input_data_list,
-    #                      dset_to_save, pred_y_rename=None):
-    #     print('DT Message: SITK_Processor moving data.')
-    #     if dset_to_save=='if_dset':
-    #         self.__setattr__(dset_to_save,
-    #                          Images_Dataset(
-    #                              preload_transforms=
-    #                              transforms.Compose(
-    #                                  [tr for tr in self.pre_transforms.transforms
-    #                                   if tr.field_oi!='y']
-    #                              )))
-    #     else:
-    #         self.__setattr__(dset_to_save,
-    #                          Images_Dataset(preload_transforms=self.pre_transforms))
-    #
-    #     input_data_list = [{k if k != 'X_location'
-    #                         else 'X':v for k, v in d.items() }
-    #                        for d in input_data_list]
-    #     input_data_list = [{k if k != 'y_location'
-    #                         else 'y':v for k, v in d.items() }
-    #                        for d in input_data_list]
-    #
-    #     self.__getattribute__(dset_to_save).transfer_list(input_data_list)
-    #
-    #     print('DT Message: SITK_Processor finished moving Inference Results.')
+    # A transfer_dataset method for moving results between processors with
+    # different pretransforms once existed here; see git history if that
+    # idea is ever revived.

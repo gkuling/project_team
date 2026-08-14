@@ -62,7 +62,7 @@ class Text_Processor(_Processor):
         :param name: the name of the dataset
         :param transforms: the pretransforms to be given to the dataset
         '''
-        assert type(data)==pd.DataFrame
+        assert isinstance(data, pd.DataFrame)
         setattr(self, name, Text_Dataset(
             data,
             preload_data=self.config.pre_load,
